@@ -1,0 +1,33 @@
+#!/bin/bash
+
+source ./openrc.sh
+
+node_size="m1.small"
+node_image="JS-API-Featured-Centos7-Feb-7-2017"
+key_name="slurm-test-key"
+network_name=jecoulte-api-net
+log_loc=/var/log/slurm_elastic.log
+
+echo "Node create invoked: $0 $*" >> $log_loc
+
+for host in $(scontrol show hostname $1)
+do
+  node_status=$(openstack server create $host --flavor $node_size --image $node_image --key-name $key_name --security-group global-ssh --security-group cluster-internal --nic net-id=$network_name | awk '/status/ {print $4}')
+  
+  echo "Node status is: $node_status" >> $log_loc
+  
+  until [[ $node_status == "ACTIVE" ]]; do
+    sleep 3
+    node_status=$(openstack server show $host | awk '/status/ {print $4}')
+    echo "Node status is: $node_status" >> $log_loc
+  done
+   
+  new_ip=$(openstack server show $host | awk '/addresses/ {print gensub(/^.*=/,"","g",$4)}')
+  echo "Node ip is $new_ip" >> $log_loc
+  echo "scontrol update nodename=$host nodeaddr=$new_ip" >> $log_loc
+  scontrol update nodename=$host nodeaddr=$new_ip
+done
+
+#pdsh 'yum install slurmd munge'
+#pdsh 'sudo systemctl restart ntpd' $1
+#pdsh 'sudo systemctl restart slurmd' $1
