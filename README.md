@@ -18,25 +18,32 @@ mounts, users, slurm config files, etc.
 
 In no particular order:
 
+* This needs to create a private network!!!
+  * just needs to happen once... but ResumeProgram also needs to know
+    the name of it.
+  * how will that work with the Atmosphere side?
+  * ResumeProgram needs to create node and attach to the private network
+  * results in started slurmd
+  * This is also going to run as the slurm user... permissions issues?
 * chrony should allow timestep jumps at any time!
 * the compute node image should allow for this as well
 * files compute nodes must receive:
-..* /etc/slurm/slurm.conf
-..* /etc/passwd
-..* /etc/groups
-..* /etc/hosts
+  * /etc/slurm/slurm.conf
+  * /etc/passwd
+  * /etc/groups
+  * /etc/hosts
 * the headnode will need scripts for
-..* starting a new CLOUD node
-..* destroying a CLOUD node
+  * starting a new CLOUD node
+  * destroying a CLOUD node
 * list of extra software to install: (extra meaning additional to Cent7 minimal?)
-..* OpenMPI
-..* MVAPICH2
-..* openhpc-slurm
-..* openhpc-slurm-server
-..* chronyd?
-..* polictycoreutils-python
-..* tcpdump
-..* bind-utils
-..* strace
-..* lsof
-..* XNIT repo!
+  * OpenMPI
+  * MVAPICH2
+  * openhpc-slurm
+  * openhpc-slurm-server
+  * chronyd?
+  * polictycoreutils-python
+  * tcpdump
+  * bind-utils
+  * strace
+  * lsof
+  * XNIT repo!
