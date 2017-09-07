@@ -25,6 +25,8 @@ In no particular order:
   * ResumeProgram needs to create node and attach to the private network
   * results in started slurmd
   * This is also going to run as the slurm user... permissions issues?
+  * ALSO, need to create/add an ssh key to openstack!
+* create a log file in /var/log/slurm_elastic.log
 * chrony should allow timestep jumps at any time!
 * the compute node image should allow for this as well
 * files compute nodes must receive:
@@ -36,6 +38,7 @@ In no particular order:
   * starting a new CLOUD node
   * destroying a CLOUD node
 * list of extra software to install: (extra meaning additional to Cent7 minimal?)
+  * pdsh (BEFORE slurm is started)
   * OpenMPI
   * MVAPICH2
   * openhpc-slurm
