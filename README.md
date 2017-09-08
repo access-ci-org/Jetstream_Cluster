@@ -16,28 +16,32 @@ mounts, users, slurm config files, etc.
 
 ## Necessary Bits
 
-In no particular order:
+These bits need to happen on the headnode *before* the computes 
+ ca work
 
-* This needs to create a private network!!!
-  * just needs to happen once... but ResumeProgram also needs to know
-    the name of it.
+* Headnode needs to create a private network!!!
+  * ResumeProgram also needs to know the name of it.
   * how will that work with the Atmosphere side?
-  * ResumeProgram needs to create node and attach to the private network
-  * results in started slurmd
-  * This is also going to run as the slurm user... permissions issues?
   * ALSO, need to create/add an ssh key to openstack!
-* create a log file in /var/log/slurm_elastic.log
+    * This ssh key needs to be usable by the slurm user
+    * OR, allow host-based auth on the compute node
 * chrony should allow timestep jumps at any time!
+  * Is this *really* necessary? Ganglia doesn't  like it!
+* create a log file in /var/log/slurm\_elastic.log
 * the compute node image should allow for this as well
+* Export of /home to 10.0.0.0/24 
+* Firewall allow all to 10., allow only ssh from external.
+  * public.xml sets this up properly
+  * ALSO, had to yum install firewalld...
+* just do a global install of ansible on the headnode.
 * files compute nodes must receive:
   * /etc/slurm/slurm.conf
   * /etc/passwd
   * /etc/groups
   * /etc/hosts
-* the headnode will need scripts for
-  * starting a new CLOUD node
-  * destroying a CLOUD node
 * list of extra software to install: (extra meaning additional to Cent7 minimal?)
+  * ansible
+  * firewalld
   * pdsh (BEFORE slurm is started)
   * OpenMPI
   * MVAPICH2
@@ -50,3 +54,13 @@ In no particular order:
   * strace
   * lsof
   * XNIT repo!
+
+These bits need to happen in ResumeProgram
+
+* ResumeProgram needs to create node and attach to the private network
+  * this is done, w/ hardcoded network, etc.
+  * This is also going to run as the slurm user... permissions issues?
+* must result in started slurmd
+* update nodename via scontrol (working, but not testable yet)
+
+SuspendProgram can just openstack server destroy
