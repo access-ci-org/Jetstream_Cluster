@@ -28,6 +28,7 @@ These bits need to happen on the headnode *before* the computes
 * chrony should allow timestep jumps at any time!
   * Is this *really* necessary? Ganglia doesn't  like it!
 * create a log file in /var/log/slurm\_elastic.log
+  * ```touch /var/log/slurm\_elastic.log && chown slurm:slurm /var/log/slurm\_elastic.log```
 * the compute node image should allow for this as well
 * Export of /home to 10.0.0.0/24 
 * Firewall allow all to 10., allow only ssh from external.
