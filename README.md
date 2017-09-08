@@ -25,11 +25,8 @@ These bits need to happen on the headnode *before* the computes
   * ALSO, need to create/add an ssh key to openstack!
     * This ssh key needs to be usable by the slurm user
     * OR, allow host-based auth on the compute node
-* chrony should allow timestep jumps at any time!
-  * Is this *really* necessary? Ganglia doesn't  like it!
 * create a log file in /var/log/slurm\_elastic.log
   * ```touch /var/log/slurm\_elastic.log && chown slurm:slurm /var/log/slurm\_elastic.log```
-* the compute node image should allow for this as well
 * Export of /home to 10.0.0.0/24 
 * Firewall allow all to 10., allow only ssh from external.
   * public.xml sets this up properly
