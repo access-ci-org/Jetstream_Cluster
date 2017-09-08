@@ -10,9 +10,26 @@ log_loc=/var/log/slurm_elastic.log
 
 echo "Node create invoked: $0 $*" >> $log_loc
 
+echo -e "\nwrite-files:" > file_init.ci
+for file in /etc/passwd /etc/group /etc/slurm/slurm.conf /etc/munge/munge.key
+do
+  echo "$file"
+  echo -e "  - encoding: b64\n    content: $(base64 -w 0 $file)\n    owner: root:root\n    path: $file \n    permissions: '$(stat -c "%a" $file)'" >> file_init.ci
+done
+
+cat compute_init.ci file_init.ci > all_init.ci
+
 for host in $(scontrol show hostname $1)
 do
-  node_status=$(openstack server create $host --flavor $node_size --image $node_image --key-name $key_name --security-group global-ssh --security-group cluster-internal --nic net-id=$network_name | awk '/status/ {print $4}')
+
+  node_status=$(openstack server create $host \
+  --flavor $node_size \
+  --image $node_image \
+  --key-name $key_name \
+  --security-group global-ssh --security-group cluster-internal \
+  --nic net-id=$network_name \
+  --user-data compute_init.ci \
+  | tee -a $log_loc | awk '/status/ {print $4}')
   
   echo "Node status is: $node_status" >> $log_loc
   
