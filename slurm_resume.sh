@@ -44,7 +44,15 @@ do
   new_ip=$(openstack server show $host | awk '/addresses/ {print gensub(/^.*=/,"","g",$4)}')
   echo "Node ip is $new_ip" >> $log_loc
   echo "scontrol update nodename=$host nodeaddr=$new_ip" >> $log_loc
-  ansible-playbook -vvv -l $host compute_playbook.yml >> $log_loc
+  sleep 10 # to give sshd time to be available
+  test_hostname=$(ssh -i /home/jecoulte/.ssh/id_rsa centos@$host 'hostname')
+  echo "test1: $test_hostname"
+  until [[ $test_hostname =~ "compute" ]]; do
+    sleep 2
+    test_hostname=$(ssh -i /home/jecoulte/.ssh/id_rsa centos@$host 'hostname')
+  done
+  echo "test2: $test_hostname"
+  ansible-playbook -v -l $host compute_playbook.yml >> $log_loc
   scontrol update nodename=$host nodeaddr=$new_ip >> $log_loc
 done
 
