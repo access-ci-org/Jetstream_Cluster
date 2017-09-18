@@ -44,7 +44,8 @@ do
   new_ip=$(openstack server show $host | awk '/addresses/ {print gensub(/^.*=/,"","g",$4)}')
   echo "Node ip is $new_ip" >> $log_loc
   echo "scontrol update nodename=$host nodeaddr=$new_ip" >> $log_loc
-  scontrol update nodename=$host nodeaddr=$new_ip
+  ansible-playbook -vvv -l $host compute_playbook.yml >> $log_loc
+  scontrol update nodename=$host nodeaddr=$new_ip >> $log_loc
 done
 
 #pdsh 'yum install slurmd munge'
