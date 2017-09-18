@@ -14,6 +14,10 @@ Ansible or whatever.). The current plan for compute nodes is to
 use a basic Cent7 image, followed by some Ansible magic to add software,
 mounts, users, slurm config files, etc.
 
+## Potential issues
+* Cloud-init auto-runs yum update on the first boot, which takes approximately forever in computer-time (~10 minutes). 
+* Might be best to create compute nodes initially, and then suspend/shelve them once that initialization happens - 'stop' might be the best way.
+
 ## Necessary Bits
 
 These bits need to happen on the headnode *before* the computes 
@@ -23,6 +27,7 @@ These bits need to happen on the headnode *before* the computes
   * Need ansible.cfg to point to an ssh.cfg
   * Need the ssh.cfg to point to the same priv key as used in server create
   * Need to edit the host list on each create/suspend
+  * Have to write headnode private IP into compute\_playbook
 * Headnode needs to create a private network!!!
   * ResumeProgram also needs to know the name of it.
   * how will that work with the Atmosphere side?
