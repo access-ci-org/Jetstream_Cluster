@@ -19,6 +19,10 @@ mounts, users, slurm config files, etc.
 These bits need to happen on the headnode *before* the computes 
  ca work
 
+* Also need to set up ansible for compute node acccess
+  * Need ansible.cfg to point to an ssh.cfg
+  * Need the ssh.cfg to point to the same priv key as used in server create
+  * Need to edit the host list on each create/suspend
 * Headnode needs to create a private network!!!
   * ResumeProgram also needs to know the name of it.
   * how will that work with the Atmosphere side?
