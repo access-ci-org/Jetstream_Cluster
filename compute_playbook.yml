@@ -149,20 +149,28 @@
     script: /tmp/add_users.sh
     ignore_errors: True
    
-  - name: copy munge key from submit node
+  - name: copy munge key from headnode
     synchronize:
       mode: push
       src: /etc/munge/munge.key
       dest: /etc/munge/munge.key
       set_remote_user: no
       use_ssh_args: yes
- 
+
   - name: fix perms on munge key
     file: 
       path: /etc/munge/munge.key
       owner: munge
       group: munge
       mode: 0600
+ 
+  - name: copy slurm.conf from headnode
+    synchronize:
+      mode: push
+      src: /etc/slurm/slurm.conf
+      dest: /etc/slurm/slurm.conf
+      set_remote_user: no
+      use_ssh_args: yes
  
   - name: enable and start munge
     service: name=munge.service enabled=yes state=started
