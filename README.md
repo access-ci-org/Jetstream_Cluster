@@ -28,6 +28,8 @@ These bits need to happen on the headnode *before* the computes
   * Need the ssh.cfg to point to the same priv key as used in server create
   * Need to edit the host list on each create/suspend
   * Have to write headnode private IP into compute\_playbook
+* SLURM USER WILL NEED AN SSH KEY!
+* Need to setfacl on /etc/munge/munge.key to allow slurm to copy this over!!!
 * Headnode needs to create a private network!!!
   * ResumeProgram also needs to know the name of it.
   * how will that work with the Atmosphere side?
