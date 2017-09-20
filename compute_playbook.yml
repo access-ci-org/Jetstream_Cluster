@@ -144,6 +144,10 @@
  #   - name: start slurmctld 
  #     service: name=slurmctld state=restarted enabled=yes
  #     when: submit_host == "yes"
+ #
+  - name: add local users to compute node
+    script: /tmp/add_users.sh
+    ignore_errors: True
    
   - name: copy munge key from submit node
     synchronize:
