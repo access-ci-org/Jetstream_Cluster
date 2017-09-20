@@ -1,10 +1,4 @@
 ---
-#- hosts: localhost
-#  tasks:
-#  
-#  - name: get headnode private ip
-#    shell: ip addr | grep -Eo '10.0.0.[0-9]*' | head -1
-#    register: headnode_private_ip
 
 - hosts: compute-*
   tasks:
