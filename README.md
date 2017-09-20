@@ -73,3 +73,9 @@ These bits need to happen in ResumeProgram
 * update nodename via scontrol (working, but not testable yet)
 
 SuspendProgram can just openstack server destroy
+chown slurm:slurm /var/log/slurm_elastic.log
+chown slurm:slurm /tmp/add_users.sh
+setfacl -m u:slurm:rw /etc/ansible/hosts
+setfacl -m u:slurm:rwx slurm_resume.sh
+setfacl -m u:slurm:rwx slurm_suspend.sh
+setfacl -m u:slurm:rwx /etc/ansible/
