@@ -7,6 +7,7 @@
     local_action:
       module: shell ip addr | grep -Eo '10.0.0.[0-9]*' | head -1
     register: headnode_private_ip
+    become: False # for running as slurm, since no sudo on localhost
 
   - name: install basic packages
     yum: name={{ item }} state=present
