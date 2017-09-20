@@ -19,10 +19,15 @@ echo "Node create invoked: $0 $*" >> $log_loc
 #
 #cat compute_init.ci file_init.ci > all_init.ci
 
+#eh. useradd won't do anything if the user exists. just have to make sure ansible doesn't flip
+# out when it 'fails' on suspend.
+echo "#!/bin/bash" > /tmp/add_users.sh
+cat /etc/passwd | awk -F':' '$4 >= 1001 && $4 < 65000 {print "useradd -u", $4, $1}' >> /tmp/add_users.sh
+
 for host in $(scontrol show hostname $1)
 do
   
-  echo "$host" >> /etc/ansible/hosts
+  echo "$host ansible_user=centos ansible_become=true" >> /etc/ansible/hosts
 
 #  --user-data all_init.ci \
   node_status=$(openstack server create $host \
@@ -45,17 +50,13 @@ do
   echo "Node ip is $new_ip" >> $log_loc
   echo "scontrol update nodename=$host nodeaddr=$new_ip" >> $log_loc
   sleep 10 # to give sshd time to be available
-  test_hostname=$(ssh -i /home/jecoulte/.ssh/id_rsa centos@$host 'hostname')
-  echo "test1: $test_hostname"
+  test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg centos@$host 'hostname' | tee $log_loc)
+#  echo "test1: $test_hostname"
   until [[ $test_hostname =~ "compute" ]]; do
     sleep 2
-    test_hostname=$(ssh -i /home/jecoulte/.ssh/id_rsa centos@$host 'hostname')
+    test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg centos@$host 'hostname' | tee $log_loc)
   done
-  echo "test2: $test_hostname"
-  ansible-playbook -v -l $host compute_playbook.yml >> $log_loc
+#  echo "test2: $test_hostname"
+  ansible-playbook -v -l $host /home/jecoulte/Jetstream_Elastic_Slurm/compute_playbook.yml >> $log_loc
   scontrol update nodename=$host nodeaddr=$new_ip >> $log_loc
 done
-
-#pdsh 'yum install slurmd munge'
-#pdsh 'sudo systemctl restart ntpd' $1
-#pdsh 'sudo systemctl restart slurmd' $1
