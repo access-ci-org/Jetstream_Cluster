@@ -9,6 +9,12 @@
     register: headnode_private_ip
     become: False # for running as slurm, since no sudo on localhost
 
+  - name: Get the slurmctld uid
+    local_action:
+      module: shell getent passwd slurm | awk -F':' '{print $3}'
+    register: headnode_slurm_uid
+    become: False # for running as slurm, since no sudo on localhost
+
   - name: install basic packages
     yum: name={{ item }} state=present
     with_items:
@@ -39,10 +45,24 @@
     yum: name={{ item }} state=latest
     with_items:
       - "ohpc-slurm-client"
- #     - "munge" # doesn't work with torque currently... even w/ --enable-munge-auth 
- #     - "munge-devel"
- #     - "munge-libs"
- 
+
+  - name: fix slurm user uid
+    user:
+      name: slurm
+      uid: "{{ headnode_slurm_uid.stdout}}"
+      shell: "/sbin/nologin"
+      home: "/etc/slurm"
+
+  - name: change ownership of slurm files
+    file:
+      path: "{{ item }}"
+      owner: slurm
+      group: slurm
+    with_items:
+      - "/var/log/slurm_jobacct.log"
+      - "/var/spool/slurm"
+      - "/var/spool/slurm/ctld"
+
  # - name: install pexpect from pip
  #   pip: name=pexpect version=3.3
  #   when: submit_host == "yes"
@@ -152,7 +172,7 @@
   - name: copy munge key from headnode
     synchronize:
       mode: push
-      src: /etc/munge/munge.key
+      src: /home/jecoulte/Jetstream_Elastic_Slurm/munge.key
       dest: /etc/munge/munge.key
       set_remote_user: no
       use_ssh_args: yes
