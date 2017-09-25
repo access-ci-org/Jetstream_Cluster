@@ -72,10 +72,28 @@ These bits need to happen in ResumeProgram
 * must result in started slurmd
 * update nodename via scontrol (working, but not testable yet)
 
-SuspendProgram can just openstack server destroy
+SuspendProgram can just openstack server destroy for now
+ - SHOULD just suspend eventually, since builds are so slow.
+
+## Current Status
+
+As suspend_program and resume_program and compute_playbook currently 
+stand, they will create a working compute node w/ running slurmd. 
+However, the current slurm.conf does not work quite properly. 
+(Had to change node state to non-CLOUD)
+
+Next step is to configure slurm to *actually* use 
+suspend/resume, and codify the install steps
+(copying munge key and suspend/resume scripts, and openrc)
+into a dir that the slurm user can access.
+
+cp /etc/munge/munge.key /usr/local/sbin/munge.key
+chown slurm /usr/local/sbin/.munge.key - since if the real key is setfacl'ed, munge won't start...
+but slurm needs to be able to copy this file over to the compute node when slurm_resume is run! ARGH.
 chown slurm:slurm /var/log/slurm_elastic.log
 chown slurm:slurm /tmp/add_users.sh
 setfacl -m u:slurm:rw /etc/ansible/hosts
 setfacl -m u:slurm:rwx slurm_resume.sh
 setfacl -m u:slurm:rwx slurm_suspend.sh
 setfacl -m u:slurm:rwx /etc/ansible/
+
