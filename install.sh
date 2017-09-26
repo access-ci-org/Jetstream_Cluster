@@ -56,7 +56,9 @@ chown slurm:slurm /usr/local/sbin/slurm_*.sh
 #  the change in headnode hostname
 cp slurm.conf /etc/slurm/slurm.conf
 
-cp ansible.cfg /etc/ansible
+cp ansible.cfg /etc/ansible/
+
+cp ssh.cfg /etc/ansible/
 
 #Start required services
 
