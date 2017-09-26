@@ -30,6 +30,8 @@ cp /etc/munge/munge.key /etc/slurm/.munge.key
 
 chown slurm:slurm /etc/slurm/.munge.key
 
+#How to generate a working openrc in the cloud-init script for this? Bash vars available?
+# Gonna be tough, since openrc requires a password...
 cp openrc.sh /etc/slurm/
 
 chown slurm:slurm /etc/slurm/openrc.sh
@@ -45,9 +47,6 @@ chown slurm:slurm /var/log/slurm_elastic.log
 setfacl -m u:slurm:rw /etc/ansible/hosts
 setfacl -m u:slurm:rwx /etc/ansible/
 
-#How to generate a working openrc in the cloud-init script for this? Bash vars available?
-# Gonna be tough, since openrc requires a password...
-
 cp slurm_*.sh /usr/local/sbin/
 
 chown slurm:slurm /usr/local/sbin/slurm_*.sh
@@ -60,7 +59,12 @@ cp ansible.cfg /etc/ansible/
 
 cp ssh.cfg /etc/ansible/
 
-#Start required services
+#create share directory
+mkdir -m 777 -p /export
 
-systemctl enable slurmctld munge
-systemctl start munge slurmctld
+#create export of homedirs and /export
+echo -e "/home 10.0.0.0/24(rw,no_root_squash) \n/export 10.0.0.0/24(rw,no_root_squash)" > /etc/exports
+
+#Start required services
+systemctl enable slurmctld munge nfs-server nfs-lock nfs rpcbind nfs-idmap
+systemctl start munge slurmctld nfs-server nfs-lock nfs rpcbind nfs-idmap
