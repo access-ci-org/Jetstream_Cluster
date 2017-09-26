@@ -24,6 +24,9 @@ mkdir -p -m 700 /etc/slurm/.ssh
 
 cp slurm-key slurm-key.pub /etc/slurm/.ssh/
 
+#Make sure slurm-user will still be valid after the nfs mount happens!
+cat slurm-key.pub >> /home/centos/.ssh/authorized_keys
+
 chown -R slurm:slurm /etc/slurm/.ssh
 
 cp /etc/munge/munge.key /etc/slurm/.munge.key
