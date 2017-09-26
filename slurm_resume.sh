@@ -4,7 +4,7 @@ source ./openrc.sh
 
 node_size="m1.small"
 node_image="JS-API-Featured-Centos7-Feb-7-2017"
-key_name="slurm-test-key"
+key_name="${OS_USERNAME}-slurm-key"
 network_name=jecoulte-api-net
 log_loc=/var/log/slurm_elastic.log
 
@@ -57,6 +57,7 @@ do
     test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg centos@$host 'hostname' | tee $log_loc)
   done
 #  echo "test2: $test_hostname"
-  ansible-playbook -v -l $host /home/jecoulte/Jetstream_Elastic_Slurm/compute_playbook.yml >> $log_loc
+# What's the right place for this to live?
+  ansible-playbook -v -l $host /etc/slurm/compute_playbook.yml >> $log_loc
   scontrol update nodename=$host nodeaddr=$new_ip >> $log_loc
 done
