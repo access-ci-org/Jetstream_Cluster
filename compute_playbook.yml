@@ -172,7 +172,7 @@
   - name: copy munge key from headnode
     synchronize:
       mode: push
-      src: /home/jecoulte/Jetstream_Elastic_Slurm/munge.key
+      src: /etc/slurm/.munge.key
       dest: /etc/munge/munge.key
       set_remote_user: no
       use_ssh_args: yes
