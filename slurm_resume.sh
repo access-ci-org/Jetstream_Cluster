@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ./openrc.sh
+source /etc/slurm/openrc.sh
 
 node_size="m1.small"
 node_image="JS-API-Featured-Centos7-Feb-7-2017"
