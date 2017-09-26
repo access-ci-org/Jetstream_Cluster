@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ./openrc.sh
+source /etc/slurm/openrc.sh
 
 log_loc=/var/log/slurm_elastic.log
 
