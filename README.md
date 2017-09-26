@@ -87,13 +87,9 @@ suspend/resume, and codify the install steps
 (copying munge key and suspend/resume scripts, and openrc)
 into a dir that the slurm user can access.
 
-cp /etc/munge/munge.key /usr/local/sbin/munge.key
-chown slurm /usr/local/sbin/.munge.key - since if the real key is setfacl'ed, munge won't start...
-but slurm needs to be able to copy this file over to the compute node when slurm_resume is run! ARGH.
-chown slurm:slurm /var/log/slurm_elastic.log
-chown slurm:slurm /tmp/add_users.sh
-setfacl -m u:slurm:rw /etc/ansible/hosts
-setfacl -m u:slurm:rwx slurm_resume.sh
-setfacl -m u:slurm:rwx slurm_suspend.sh
-setfacl -m u:slurm:rwx /etc/ansible/
+Slurm will run suspend/resume in response to 
+scontrol update nodename=compute-[0-1] state=power_down/up
+
+Need to add in logic to only suspend on node suspend, 
+and only create a whole new node if it doesn't exist already!
 
