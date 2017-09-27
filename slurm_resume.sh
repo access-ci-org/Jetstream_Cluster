@@ -58,7 +58,7 @@ do
     done
   #  echo "test2: $test_hostname"
   # What's the right place for this to live?
-    ansible-playbook -v -l $host /etc/slurm/compute_playbook.yml >> $log_loc
+    ansible-playbook -v -l $host /etc/slurm/compute_playbook.yml 2>&1 >> $log_loc
   else
     openstack server start $host
     new_ip=$(openstack server show $host | awk '/addresses/ {print gensub(/^.*=/,"","g",$4)}')
