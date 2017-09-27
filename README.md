@@ -18,12 +18,28 @@ mounts, users, slurm config files, etc.
 * Cloud-init auto-runs yum update on the first boot, which takes approximately forever in computer-time (~10 minutes). 
 * Might be best to create compute nodes initially, and then suspend/shelve them once that initialization happens - 'stop' might be the best way.
 
+## Current Status
+
+As suspend_program and resume_program and compute_playbook currently 
+stand, they will create a working compute node w/ running slurmd. 
+
+Install script is working, except for the need to create an openrc.sh
+file in the same directory. 
+
+The create/suspend works ONCE the nodes have been initially created. 
+If the node already exists, the openstack stop/start are used.
+Haven't properly tested whether the resume will function still when the node
+doesn't yet exist. Seemed like there may be timeout issues.
+
+Testing note:
+Slurm will run suspend/resume in response to 
+scontrol update nodename=compute-[0-1] state=power_down/up
+
 ## Necessary Bits
 
-These bits need to happen on the headnode *before* the computes 
- ca work
 
-* Also need to set up ansible for compute node acccess
+For Headnode install/setup:
+* Need to set up ansible for compute node acccess
   * Need ansible.cfg to point to an ssh.cfg
   * Need the ssh.cfg to point to the same priv key as used in server create
   * Need to edit the host list on each create/suspend
@@ -67,29 +83,12 @@ These bits need to happen on the headnode *before* the computes
 These bits need to happen in ResumeProgram
 
 * ResumeProgram needs to create node and attach to the private network
-  * this is done, w/ hardcoded network, etc.
-  * This is also going to run as the slurm user... permissions issues?
-* must result in started slurmd
-* update nodename via scontrol (working, but not testable yet)
+  * this is done, w/ hardcoded network, etc. 
+    * NEED TO MAKE THIS DYNAMIC! Modify in cloud-init of headnode build!
+  * This is also going to run as the slurm user... permissions issues? solved!
+* must result in started slurmd (does)
+* update nodename via scontrol  (does)
 
-SuspendProgram can just openstack server destroy for now
- - SHOULD just suspend eventually, since builds are so slow.
-
-## Current Status
-
-As suspend_program and resume_program and compute_playbook currently 
-stand, they will create a working compute node w/ running slurmd. 
-However, the current slurm.conf does not work quite properly. 
-(Had to change node state to non-CLOUD)
-
-Next step is to configure slurm to *actually* use 
-suspend/resume, and codify the install steps
-(copying munge key and suspend/resume scripts, and openrc)
-into a dir that the slurm user can access.
-
-Slurm will run suspend/resume in response to 
-scontrol update nodename=compute-[0-1] state=power_down/up
-
-Need to add in logic to only suspend on node suspend, 
-and only create a whole new node if it doesn't exist already!
+SuspendProgram can just openstack server stop - destroy may also be an option, but the
+ initial cloud-init build is very slow!
 
