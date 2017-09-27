@@ -28,7 +28,7 @@ for host in $(scontrol show hostname $1)
 do
   echo "$host ansible_user=centos ansible_become=true" >> /etc/ansible/hosts
 
-  if [[ $(openstack server show $host) ~= "No server with a name or ID of" ]]; then 
+  if [[ "$(openstack server show $host 2>&1)" =~ "No server with a name or ID of" ]]; then 
 
     node_status=$(openstack server create $host \
     --flavor $node_size \
@@ -50,11 +50,11 @@ do
     echo "Node ip is $new_ip" >> $log_loc
     echo "scontrol update nodename=$host nodeaddr=$new_ip" >> $log_loc
     sleep 10 # to give sshd time to be available
-    test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg centos@$host 'hostname' | tee $log_loc)
+    test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg centos@$host 'hostname' | tee -a $log_loc)
   #  echo "test1: $test_hostname"
     until [[ $test_hostname =~ "compute" ]]; do
       sleep 2
-      test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg centos@$host 'hostname' | tee $log_loc)
+      test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg centos@$host 'hostname' | tee -a $log_loc)
     done
   #  echo "test2: $test_hostname"
   # What's the right place for this to live?
