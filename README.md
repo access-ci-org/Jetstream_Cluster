@@ -38,6 +38,9 @@ scontrol update nodename=compute-[0-1] state=power_down/up
 Might need to change compute node-name to include the OS_USERNAME,
 so that we don't end up with server name clashing...
 
+Something is up with the mount command; further ansible commands FAIL
+after it is run.
+
 ## Necessary Bits
 
 
