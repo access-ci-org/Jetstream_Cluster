@@ -132,11 +132,6 @@
     tags:
       - export_home
  
-  - name: mount -a on compute nodes
-    command: "mount -a"
-    tags:
-      - export_home
- 
  # - name: import firewalld public zone
  #   template: src=public.xml dest=/etc/firewalld/zones/public.xml
  
@@ -168,6 +163,17 @@
   - name: add local users to compute node
     script: /tmp/add_users.sh
     ignore_errors: True
+
+# - name: copy add_users script
+#   synchronize:
+#     mode: push
+#     src: /tmp/add_users.sh
+#     dest: /tmp/add_users.sh
+#     set_remote_user: no
+#     use_ssh_args: yes
+#
+# - name: run add_users.sh
+#   command: /tmp/add_users.sh
    
   - name: copy munge key from headnode
     synchronize:
@@ -198,5 +204,10 @@
   - name: start slurmd
     service: name=slurmd state=restarted enabled=yes
 
+  - name: mount -a on compute nodes
+    command: "mount -a"
+    tags:
+      - export_home
+ 
 #  - vars:
 #      headnode_private_ip: 10.0.0.6
