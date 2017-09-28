@@ -14,6 +14,9 @@ pip install python-openstackclient
 #already did this step locally...
 ssh-keygen -b 2048 -t rsa -P "" -f slurm-key
 
+# generate a local key for centos for after homedirs are mounted!
+su centos - -c 'ssh-keygen -t rsa -b 2048 -P "" -f /home/centos/.ssh/id_rsa.pub'
+
 source ./openrc.sh
 
 if [[ -n $(openstack keypair list | grep ${OS_USERNAME}-slurm-key) ]]; then
