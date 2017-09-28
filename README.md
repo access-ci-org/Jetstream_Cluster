@@ -20,6 +20,8 @@ mounts, users, slurm config files, etc.
 
 ## Current Status
 
+FIX INSTALL.SH TO GET THE SSH KEY NAME RIGHT!
+
 As suspend_program and resume_program and compute_playbook currently 
 stand, they will create a working compute node w/ running slurmd. 
 
