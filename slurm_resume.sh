@@ -3,7 +3,7 @@
 source /etc/slurm/openrc.sh
 
 node_size="m1.small"
-node_image="JS-API-Featured-Centos7-Feb-7-2017"
+node_image="JS-API-Featured-Centos7-Sep-27-2017"
 key_name="${OS_USERNAME}-slurm-key"
 network_name=jecoulte-api-net
 log_loc=/var/log/slurm_elastic.log
@@ -35,7 +35,7 @@ do
     --image $node_image \
     --key-name $key_name \
     --security-group global-ssh --security-group cluster-internal \
-    --nic net-id=$network_name \
+    --nic net-id=$network_name 2>&1 \
     | tee -a $log_loc | awk '/status/ {print $4}')
     
     echo "Node status is: $node_status" >> $log_loc
@@ -58,7 +58,7 @@ do
     done
   #  echo "test2: $test_hostname"
   # What's the right place for this to live?
-    ansible-playbook -v -l $host /etc/slurm/compute_playbook.yml 2>&1 >> $log_loc
+    ansible-playbook -v -l $host /etc/slurm/compute_playbook.yml >> $log_loc
   else
     openstack server start $host
     new_ip=$(openstack server show $host | awk '/addresses/ {print gensub(/^.*=/,"","g",$4)}')
