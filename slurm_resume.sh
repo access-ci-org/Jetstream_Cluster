@@ -22,7 +22,7 @@ echo "Node resume invoked: $0 $*" >> $log_loc
 #eh. useradd won't do anything if the user exists. just have to make sure ansible doesn't flip
 # out when it 'fails' on suspend.
 echo "#!/bin/bash" > /tmp/add_users.sh
-cat /etc/passwd | awk -F':' '$4 >= 1001 && $4 < 65000 {print "useradd -u", $4, $1}' >> /tmp/add_users.sh
+cat /etc/passwd | awk -F':' '$4 >= 1001 && $4 < 65000 {print "useradd -M -u", $4, $1}' >> /tmp/add_users.sh
 
 for host in $(scontrol show hostname $1)
 do
