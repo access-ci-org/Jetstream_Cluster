@@ -7,7 +7,7 @@ fi
 
 yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm
 
-yum -y install ohpc-slurm-server ansible
+yum -y install ohpc-slurm-server ansible mailx
 
 pip install python-openstackclient
 
