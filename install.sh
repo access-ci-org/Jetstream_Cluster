@@ -50,9 +50,8 @@ if [[ $(quota_check "secgroups" "security group" 2) ]]; then
     exit
   fi
 fi
-quota_check "instances" "server" 1
 
-exit
+#quota_check "instances" "server" 1
 
 if [[ -n $(openstack keypair list | grep ${OS_USERNAME}-slurm-key) ]]; then
   openstack keypair delete ${OS_USERNAME}-slurm-key
