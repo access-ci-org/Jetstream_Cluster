@@ -59,12 +59,12 @@ else
 fi
 
 #make sure security groups exist... this could cause issues.
-if [[ ! ("$security_groups" =~ "global-ssh" ]]; then
+if [[ ! ("$security_groups" =~ "global-ssh") ]]; then
   openstack security group create --description "ssh \& icmp enabled" global-ssh
   openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 global-ssh
   openstack security group rule create --protocol icmp global-ssh
 fi
-if [[ ! ("$security_groups" =~ "cluster-internal" ]]; then
+if [[ ! ("$security_groups" =~ "cluster-internal") ]]; then
   openstack security group create --description "internal 10.0.0.0/24 network allowed" cluster-internal
   openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/24 cluster-internal
   openstack security group rule create --protocol udp --dst-port 1:65535 --remote-ip 10.0.0.0/24 cluster-internal
