@@ -11,8 +11,6 @@ yum -y install ohpc-slurm-server ansible mailx
 
 pip install python-openstackclient
 
-exit
-
 #already did this step locally...
 ssh-keygen -b 2048 -t rsa -P "" -f slurm-key
 
@@ -42,7 +40,7 @@ fi
 return 1
 }
 
-quota_check "key-pairs" "keypair" 1
+#quota_check "key-pairs" "keypair" 1
 security_groups=$(openstack security group list -f value)
 if [[ $(quota_check "secgroups" "security group" 2) ]]; then
   if [[ ! ("$security_groups" =~ "global-ssh") && ("$security_groups" =~ "cluster-internal") ]]; then
