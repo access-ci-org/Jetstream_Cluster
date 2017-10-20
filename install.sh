@@ -19,11 +19,57 @@ su centos - -c 'ssh-keygen -t rsa -b 2048 -P "" -f /home/centos/.ssh/id_rsa'
 
 source ./openrc.sh
 
+# Defining a function here to check for quotas, and exit if this script will cause problems!
+# also, storing 'quotas' in a global var, so we're not calling it every single time
+quotas=$(openstack quota show)
+quota_check () 
+{
+quota_name=$1
+type_name=$2 #the name for a quota and the name for the thing itself are not the same
+number_created=$3 #number of the thing that we'll create here.
+
+current_num=$(openstack $type_name list -f value | wc -l)
+
+max_types=$(echo "$quotas" | awk -v quota=$quota_name '$0 ~ quota {print $4}')
+
+#echo "checking quota for $quota_name of $type_name to create $number_created - want $current_num to be less than $max_types"
+
+if [[ "$current_num" -lt "$((max_types + number_created))" ]]; then 
+  return 0
+fi
+return 1
+}
+
+quota_check "key-pairs" "keypair" 1
+security_groups=$(openstack security group list -f value)
+if [[ $(quota_check "secgroups" "security group" 2) ]]; then
+  if [[ ! ("$security_groups" =~ "global-ssh") && ("$security_groups" =~ "cluster-internal") ]]; then
+    echo "NOT ENOUGH SECURITY GROUPS REMAINING IN YOUR ALLOCATION! EITHER ASK FOR A QUOTA INCREASE, OR REMOVE SOME SECURITY GROUPS"
+    exit
+  fi
+fi
+quota_check "instances" "server" 1
+
+exit
+
 if [[ -n $(openstack keypair list | grep ${OS_USERNAME}-slurm-key) ]]; then
   openstack keypair delete ${OS_USERNAME}-slurm-key
   openstack keypair create --public-key slurm-key.pub ${OS_USERNAME}-slurm-key
 else
   openstack keypair create --public-key slurm-key.pub ${OS_USERNAME}-slurm-key
+fi
+
+#make sure security groups exist... this could cause issues.
+if [[ ! ("$security_groups" =~ "global-ssh" ]]; then
+  openstack security group create --description "ssh \& icmp enabled" global-ssh
+  openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 global-ssh
+  openstack security group rule create --protocol icmp global-ssh
+fi
+if [[ ! ("$security_groups" =~ "cluster-internal" ]]; then
+  openstack security group create --description "internal 10.0.0.0/24 network allowed" cluster-internal
+  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/24 cluster-internal
+  openstack security group rule create --protocol udp --dst-port 1:65535 --remote-ip 10.0.0.0/24 cluster-internal
+  openstack security group rule create --protocol icmp cluster-internal
 fi
 
 # Deal with files required by slurm - better way to encapsulate this section?
