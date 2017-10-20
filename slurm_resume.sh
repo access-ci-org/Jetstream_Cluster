@@ -5,7 +5,7 @@ source /etc/slurm/openrc.sh
 node_size="m1.small"
 node_image="JS-API-Featured-Centos7-Sep-27-2017"
 key_name="${OS_USERNAME}-slurm-key"
-network_name=jecoulte-api-net
+network_name=${OS_USERNAME}-elastic-net
 log_loc=/var/log/slurm_elastic.log
 
 echo "Node resume invoked: $0 $*" >> $log_loc
