@@ -11,6 +11,8 @@ yum -y install ohpc-slurm-server ansible mailx
 
 pip install python-openstackclient
 
+exit
+
 #already did this step locally...
 ssh-keygen -b 2048 -t rsa -P "" -f slurm-key
 
@@ -71,6 +73,10 @@ if [[ ! ("$security_groups" =~ "cluster-internal" ]]; then
   openstack security group rule create --protocol udp --dst-port 1:65535 --remote-ip 10.0.0.0/24 cluster-internal
   openstack security group rule create --protocol icmp cluster-internal
 fi
+
+#Get OS Network name of *this* server, and set as the network for compute-nodes
+headnode_os_subnet=$(openstack server show $(hostname | cut -f 1 -d'.') | awk '/addresses/ {print $4}' | cut -f 1 -d'=')
+sed -i "s/network_name=.*/network_name=$headnode_os_subnet/" ./slurm_resume.sh
 
 # Deal with files required by slurm - better way to encapsulate this section?
 
