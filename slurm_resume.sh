@@ -2,10 +2,10 @@
 
 source /etc/slurm/openrc.sh
 
-node_size="m1.small"
-node_image="JS-API-Featured-Centos7-Sep-27-2017"
+node_size="m1.xlarge"
+node_image=$(openstack image list -f value | grep JS-API-Featured-Centos7- | cut -f 2 -d' ')
 key_name="${OS_USERNAME}-slurm-key"
-network_name=${OS_USERNAME}-elastic-net
+network_name=tg829096-elastic-net
 log_loc=/var/log/slurm_elastic.log
 
 echo "Node resume invoked: $0 $*" >> $log_loc
@@ -24,11 +24,14 @@ echo "Node resume invoked: $0 $*" >> $log_loc
 echo "#!/bin/bash" > /tmp/add_users.sh
 cat /etc/passwd | awk -F':' '$4 >= 1001 && $4 < 65000 {print "useradd -M -u", $4, $1}' >> /tmp/add_users.sh
 
+ansible_list=""
 for host in $(scontrol show hostname $1)
 do
   echo "$host ansible_user=centos ansible_become=true" >> /etc/ansible/hosts
 
   if [[ "$(openstack server show $host 2>&1)" =~ "No server with a name or ID of" ]]; then 
+
+    ansible_list+="$host,"
 
     node_status=$(openstack server create $host \
     --flavor $node_size \
@@ -48,7 +51,7 @@ do
      
     new_ip=$(openstack server show $host | awk '/addresses/ {print gensub(/^.*=/,"","g",$4)}')
     echo "Node ip is $new_ip" >> $log_loc
-    echo "scontrol update nodename=$host nodeaddr=$new_ip" >> $log_loc
+#    echo "scontrol update nodename=$host nodeaddr=$new_ip" >> $log_loc
     sleep 10 # to give sshd time to be available
     test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg centos@$host 'hostname' | tee -a $log_loc)
   #  echo "test1: $test_hostname"
@@ -58,10 +61,12 @@ do
     done
   #  echo "test2: $test_hostname"
   # What's the right place for this to live?
-    ansible-playbook -v -l $host /etc/slurm/compute_playbook.yml >> $log_loc
   else
     openstack server start $host
     new_ip=$(openstack server show $host | awk '/addresses/ {print gensub(/^.*=/,"","g",$4)}')
   fi
   scontrol update nodename=$host nodeaddr=$new_ip >> $log_loc
 done
+
+echo "Running ansible on ${ansible_list::-1}" >> $log_loc
+ansible-playbook -l "${ansible_list::-1}" /etc/slurm/compute_playbook.yml >> $log_loc

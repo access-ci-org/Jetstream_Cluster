@@ -40,7 +40,7 @@ fi
 return 1
 }
 
-quota_check "key-pairs" "keypair" 1
+#quota_check "key-pairs" "keypair" 1
 security_groups=$(openstack security group list -f value)
 if [[ $(quota_check "secgroups" "security group" 2) ]]; then
   if [[ ! ("$security_groups" =~ "global-ssh") && ("$security_groups" =~ "cluster-internal") ]]; then
@@ -48,9 +48,8 @@ if [[ $(quota_check "secgroups" "security group" 2) ]]; then
     exit
   fi
 fi
-quota_check "instances" "server" 1
 
-exit
+#quota_check "instances" "server" 1
 
 if [[ -n $(openstack keypair list | grep ${OS_USERNAME}-slurm-key) ]]; then
   openstack keypair delete ${OS_USERNAME}-slurm-key
@@ -60,17 +59,21 @@ else
 fi
 
 #make sure security groups exist... this could cause issues.
-if [[ ! ("$security_groups" =~ "global-ssh" ]]; then
+if [[ ! ("$security_groups" =~ "global-ssh") ]]; then
   openstack security group create --description "ssh \& icmp enabled" global-ssh
   openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 global-ssh
   openstack security group rule create --protocol icmp global-ssh
 fi
-if [[ ! ("$security_groups" =~ "cluster-internal" ]]; then
+if [[ ! ("$security_groups" =~ "cluster-internal") ]]; then
   openstack security group create --description "internal 10.0.0.0/24 network allowed" cluster-internal
   openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/24 cluster-internal
   openstack security group rule create --protocol udp --dst-port 1:65535 --remote-ip 10.0.0.0/24 cluster-internal
   openstack security group rule create --protocol icmp cluster-internal
 fi
+
+#Get OS Network name of *this* server, and set as the network for compute-nodes
+headnode_os_subnet=$(openstack server show $(hostname | cut -f 1 -d'.') | awk '/addresses/ {print $4}' | cut -f 1 -d'=')
+sed -i "s/network_name=.*/network_name=$headnode_os_subnet/" ./slurm_resume.sh
 
 # Deal with files required by slurm - better way to encapsulate this section?
 
