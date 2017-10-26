@@ -68,5 +68,5 @@ do
   scontrol update nodename=$host nodeaddr=$new_ip >> $log_loc
 done
 
-echo "Running ansible on ${hostlist::-1}" >> $log_loc
-ansible-playbook -l "${hostlist::-1}" /etc/slurm/compute_playbook.yml >> $log_loc
+echo "Running ansible on ${ansible_list::-1}" >> $log_loc
+ansible-playbook -l "${ansible_list::-1}" /etc/slurm/compute_playbook.yml >> $log_loc
