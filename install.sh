@@ -111,8 +111,8 @@ cp slurm_*.sh /usr/local/sbin/
 
 chown slurm:slurm /usr/local/sbin/slurm_*.sh
 
-# This should include some dynamic modification of the file, to reflect 
-#  the change in headnode hostname
+#"dynamic" hostname adjustment
+sed -i "s/ControlMachine=slurm-example/ControlMachine=$(hostname -s)/" ./slurm.conf
 cp slurm.conf /etc/slurm/slurm.conf
 
 cp ansible.cfg /etc/ansible/
