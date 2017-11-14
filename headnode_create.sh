@@ -93,6 +93,8 @@ fi
 image_name=$(openstack image list -f value | grep JS-API-Featured-Centos7 | cut -f 2 -d' ')
 openstack server create --flavor m1.small --image $image_name --key-name $OS_keyname --security-group global-ssh --security-group cluster-internal --nic net-id=${OS_USERNAME}-elastic-net $1
 public_ip=$(openstack floating ip create public | awk '/floating_ip_address/ {print $4}')
+#For some reason there's a time issue here - adding a sleep command to allow network to become ready
+sleep 10
 openstack server add floating ip $1 $public_ip
 
 echo "You should be able to login to your server with your Jetstream key: $OS_keyname, at $public_ip"
