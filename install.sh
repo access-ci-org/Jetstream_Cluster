@@ -100,6 +100,10 @@ chmod 400 /etc/slurm/openrc.sh
 
 cp compute_playbook.yml /etc/slurm/
 
+cp prevent-updates.ci /etc/slurm/
+
+chown slurm:slurm /etc/slurm/prevent-updates.ci
+
 touch /var/log/slurm_elastic.log
 
 chown slurm:slurm /var/log/slurm_elastic.log
