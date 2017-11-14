@@ -10,6 +10,12 @@ if [[ -z "$1" ]]; then
   exit
 fi
 
+if [[ ! -e ${HOME}/.ssh/id_rsa.pub ]]; then
+#This may be temporary... but seems fairly reasonable.
+  echo "NO KEY FOUND IN ${HOME}/.ssh/id_rsa.pub! - please create one and re-run!"  
+  exit
+fi
+
 source ./openrc.sh
 
 # Defining a function here to check for quotas, and exit if this script will cause problems!
