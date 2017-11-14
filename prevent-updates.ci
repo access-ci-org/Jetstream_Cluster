@@ -1,0 +1,8 @@
+#cloud-config
+packages: []
+
+package_update: false
+package_upgrade: false
+package_reboot_if_required: false
+
+final_message: "Boot completed in $UPTIME seconds"
