@@ -2,7 +2,7 @@
 
 source /etc/slurm/openrc.sh
 
-node_size="m1.xlarge"
+node_size="m1.small"
 node_image=$(openstack image list -f value | grep JS-API-Featured-Centos7- | cut -f 2 -d' ')
 key_name="${OS_USERNAME}-slurm-key"
 network_name=tg829096-elastic-net
