@@ -37,7 +37,7 @@ do
     --flavor $node_size \
     --image $node_image \
     --key-name $key_name \
-    --user-data prevent-updates.ci
+    --user-data prevent-updates.ci \
     --security-group global-ssh --security-group cluster-internal \
     --nic net-id=$network_name 2>&1 \
     | tee -a $log_loc | awk '/status/ {print $4}')
