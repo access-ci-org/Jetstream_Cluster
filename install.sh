@@ -7,7 +7,7 @@ fi
 
 yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm
 
-yum -y install ohpc-slurm-server ansible mailx environment-modules openmpi
+yum -y install ohpc-slurm-server ansible mailx environment-modules openmpi bash-completion
 
 pip install python-openstackclient
 
@@ -122,6 +122,8 @@ cp slurm.conf /etc/slurm/slurm.conf
 cp ansible.cfg /etc/ansible/
 
 cp ssh.cfg /etc/ansible/
+
+cp slurm_test.job ${HOME}
 
 #create share directory
 mkdir -m 777 -p /export
