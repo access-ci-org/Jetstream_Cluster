@@ -90,8 +90,8 @@ else
   OS_keyname=${OS_USERNAME}-elastic-key
 fi
 
-#image_name=$(openstack image list -f value | grep JS-API-Featured-Centos7 | cut -f 2 -d' ')
-image_name=tutorial-headnode-snap
+image_name=$(openstack image list -f value | grep JS-API-Featured-Centos7- | grep -vi Intel | cut -f 2 -d' ')
+echo "openstack server create --user-data prevent-updates.ci --flavor m1.small --image $image_name --key-name $OS_keyname --security-group global-ssh --security-group cluster-internal --nic net-id=${OS_USERNAME}-elastic-net $1"
 openstack server create --user-data prevent-updates.ci --flavor m1.small --image $image_name --key-name $OS_keyname --security-group global-ssh --security-group cluster-internal --nic net-id=${OS_USERNAME}-elastic-net $1
 public_ip=$(openstack floating ip create public | awk '/floating_ip_address/ {print $4}')
 #For some reason there's a time issue here - adding a sleep command to allow network to become ready
@@ -103,7 +103,7 @@ echo "test1: $hostname_test"
 until [[ $hostname_test =~ "$1" ]]; do
   sleep 2
   hostname_test=$(ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@$public_ip 'hostname')
-  echo"ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@$public_ip 'hostname'"
+  echo "ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@$public_ip 'hostname'"
   echo "test2: $hostname_test"
 done
 
