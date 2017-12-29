@@ -1,0 +1,7 @@
+#!/bin/bash
+#SBATCH -n 2
+#SBATCH -o nodes_%A.out
+
+module load mpi/openmpi-x86_64
+
+mpirun -n 2 hostname
