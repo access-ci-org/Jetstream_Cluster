@@ -72,6 +72,11 @@ do
     test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg centos@$host 'hostname' | tee -a $log_loc)
   done
 
+  #add users Just in Case
+  user_add_result=$(ansible -m script -a "/tmp/add_users.sh" $host)
+  #echo "Tried to add users: " $user_add_result >> $log_loc
+  # Commenting out - as run, this doesn't ignore the errors from extant users...
+
 #Now, safe to update slurm w/ node info
 #  echo "scontrol update nodename=$host nodeaddr=$new_ip" >> $log_loc
   scontrol update nodename=$host nodeaddr=$new_ip >> $log_loc
