@@ -51,11 +51,11 @@ fi
 
 #quota_check "instances" "server" 1
 
-if [[ -n $(openstack keypair list | grep ${OS_USERNAME}-slurm-key) ]]; then
-  openstack keypair delete ${OS_USERNAME}-slurm-key
-  openstack keypair create --public-key slurm-key.pub ${OS_USERNAME}-slurm-key
+if [[ -n $(openstack keypair list | grep ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key) ]]; then
+  openstack keypair delete ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key
+  openstack keypair create --public-key slurm-key.pub ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key
 else
-  openstack keypair create --public-key slurm-key.pub ${OS_USERNAME}-slurm-key
+  openstack keypair create --public-key slurm-key.pub ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key
 fi
 
 #make sure security groups exist... this could cause issues.
