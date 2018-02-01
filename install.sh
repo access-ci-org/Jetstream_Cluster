@@ -113,7 +113,13 @@ setfacl -m u:slurm:rwx /etc/ansible/
 
 cp slurm_*.sh /usr/local/sbin/
 
+cp cron-node-check.sh /usr/local/sbin/
+
 chown slurm:slurm /usr/local/sbin/slurm_*.sh
+
+chown slurm:slurm /usr/local/sbin/cron-node-check.sh
+
+echo "#13 */6  *  *  * centos     /usr/local/sbin/cron-node-check.sh" >> /etc/crontab
 
 #"dynamic" hostname adjustment
 sed -i "s/ControlMachine=slurm-example/ControlMachine=$(hostname -s)/" ./slurm.conf
@@ -134,3 +140,5 @@ echo -e "/home 10.0.0.0/24(rw,no_root_squash) \n/export 10.0.0.0/24(rw,no_root_s
 #Start required services
 systemctl enable slurmctld munge nfs-server nfs-lock nfs rpcbind nfs-idmap
 systemctl start munge slurmctld nfs-server nfs-lock nfs rpcbind nfs-idmap
+
+echo -e "If you wish to enable an email when node state is drain or down, please uncomment \nthe cron-node-check.sh job in /etc/crontab, and place your email of choice in the 'email_addr' variable \nat the beginning of /usr/local/sbin/cron-node-check.sh"
