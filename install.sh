@@ -117,7 +117,7 @@ cp cron-node-check.sh /usr/local/sbin/
 
 chown slurm:slurm /usr/local/sbin/slurm_*.sh
 
-chown slurm:slurm /usr/local/sbin/cron-node-check.sh
+chown centos:centos /usr/local/sbin/cron-node-check.sh
 
 echo "#13 */6  *  *  * centos     /usr/local/sbin/cron-node-check.sh" >> /etc/crontab
 
