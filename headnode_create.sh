@@ -83,9 +83,11 @@ if [[ -n "$home_key_in_OS" ]]; then
   OS_keyname=$home_key_in_OS
 elif [[ -n $(echo "$openstack_keys" | grep ${OS_USERNAME}-elastic-key) ]]; then
   openstack keypair delete ${OS_USERNAME}-elastic-key
+# This doesn't need to depend on the OS_PROJECT_NAME, as the slurm-key does, in install.sh and slurm_resume
   openstack keypair create --public-key ${HOME}/.ssh/id_rsa.pub ${OS_USERNAME}-elastic-key
   OS_keyname=${OS_USERNAME}-elastic-key
 else
+# This doesn't need to depend on the OS_PROJECT_NAME, as the slurm-key does, in install.sh and slurm_resume
   openstack keypair create --public-key ${HOME}/.ssh/id_rsa.pub ${OS_USERNAME}-elastic-key
   OS_keyname=${OS_USERNAME}-elastic-key
 fi
