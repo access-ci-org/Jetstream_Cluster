@@ -12,6 +12,11 @@ do
   echo "$count test: $mount_test"
 done
 
+if [[ $count -ge 10 ]]; then
+ echo "FAILED TO MOUNT home - $hostname"
+ exit 1
+fi
+
 echo "HOME IS MOUNTED! $hostname"
 
 exit 0
