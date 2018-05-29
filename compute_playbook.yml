@@ -130,7 +130,6 @@
   - name: import /export on compute nodes
     lineinfile:
       dest: /etc/fstab
-      line:  "{{ headnode_private_ip.stdout }}:/export  /export  nfs  defaults 0 0"
       line:  "{{ headnode_private_ip.stdout }}:/export  /export  nfs  defaults,nfsvers=4.0 0 0"
       state: present
     tags:
