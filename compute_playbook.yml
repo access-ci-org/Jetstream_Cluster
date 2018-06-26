@@ -21,6 +21,9 @@
       - "https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm"
       - "openmpi"       #torque
       - "libselinux-python"
+      - "telnet"
+      - "bind-utils"
+      - "vim"
  #    - "quantum-espresso-openmpi"
  #    - "quantum-espresso"
  #     - "rsync"
@@ -118,7 +121,7 @@
   - name: import /home on compute nodes
     lineinfile:
       dest: /etc/fstab
-      line:  "{{ headnode_private_ip.stdout }}:/home  /home  nfs  defaults 0 0"
+      line:  "{{ headnode_private_ip.stdout }}:/home  /home  nfs  defaults,nfsvers=4.0 0 0"
       state: present
     tags:
       - export_home
@@ -129,7 +132,7 @@
   - name: import /export on compute nodes
     lineinfile:
       dest: /etc/fstab
-      line:  "{{ headnode_private_ip.stdout }}:/export  /export  nfs  defaults 0 0"
+      line:  "{{ headnode_private_ip.stdout }}:/export  /export  nfs  defaults,nfsvers=4.0 0 0"
       state: present
     tags:
       - export_home
