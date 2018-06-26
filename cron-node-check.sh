@@ -26,3 +26,14 @@ if [[ -n $sinfo_check ]]; then
   echo $sinfo_check | mailx -r "node-check@$mail_domain" -s "NODE IN BAD STATE - $mail_domain" $email_addr
 #  echo "$sinfo_check  mailx -r "node-check@$mail_domain" -s "NODE IN BAD STATE - $mail_domain" $email_addr" # TESTING LINE
 fi
+
+#Check for ACTIVE nodes without running/cf/cg jobs
+squeue_check=$(squeue -h -t CF,CG,R)
+
+#source the openrc.sh for instance check
+$(sudo cat /etc/slurm/openrc.sh)
+compute_node_check=$(openstack server list | awk '/compute/ && /ACTIVE/')
+
+if [[ -n $compute_node_check && -z $squeue_check ]]; then
+  echo $compute_node_check $squeue_check | mailx -r "node-check@$mail_domain" -s "NODE IN ACTIVE STATE WITHOUT JOBS- $mail_domain" $email_addr
+fi
