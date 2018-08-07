@@ -104,9 +104,13 @@ cp prevent-updates.ci /etc/slurm/
 
 chown slurm:slurm /etc/slurm/prevent-updates.ci
 
-touch /var/log/slurm_elastic.log
+mkdir /var/log/slurm
 
-chown slurm:slurm /var/log/slurm_elastic.log
+touch /var/log/slurm/slurm_elastic.log
+
+chown -R slurm:slurm /var/log/slurm/
+
+cp slurm-logrotate.conf /etc/logrotate.d/slurm
 
 setfacl -m u:slurm:rw /etc/ansible/hosts
 setfacl -m u:slurm:rwx /etc/ansible/
