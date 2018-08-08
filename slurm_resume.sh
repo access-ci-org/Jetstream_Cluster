@@ -39,7 +39,7 @@ do
     --flavor $node_size \
     --image $node_image \
     --key-name $key_name \
-    --user-data /etc/slurm/prevent-updates.ci \
+    --user-data <(cat /etc/slurm/prevent-updates.ci && echo -e "hostname: $host \npreserve_hostname: true\ndebug:") \
     --security-group global-ssh --security-group cluster-internal \
     --nic net-id=$network_name 2>&1 \
     | tee -a $log_loc | awk '/status/ {print $4}')
@@ -47,7 +47,7 @@ do
     echo "$host status is: $node_status" >> $log_loc
     
   else
-    $node_status=$(openstack server start $host)
+    node_status=$(openstack server start $host)
     echo "$host status is: $node_status" >> $log_loc
 #    new_ip=$(openstack server show $host | awk '/addresses/ {print gensub(/^.*=/,"","g",$4)}')
   fi
@@ -63,7 +63,7 @@ do
   done
    
   new_ip=$(openstack server show $host | awk '/addresses/ {print gensub(/^.*=/,"","g",$4)}')
-  echo "Node ip is $new_ip" >> $log_loc
+  echo "$host ip is $new_ip" >> $log_loc
   sleep 10 # to give sshd time to be available
   #check that the compute node isn't already in /etc/hosts, if on TACC - otherwise leave commented
 #  ip_check=$(grep $new_ip /etc/hosts)
@@ -80,7 +80,7 @@ do
 #  fi
   test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg centos@$host 'hostname' | tee -a $log_loc)
   #  echo "test1: $test_hostname"
-  until [[ $test_hostname =~ "compute" ]]; do
+  until [[ $test_hostname =~ $host ]]; do
     sleep 2
     test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg centos@$host 'hostname' | tee -a $log_loc)
   done
