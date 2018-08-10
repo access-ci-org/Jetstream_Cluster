@@ -14,89 +14,65 @@ Ansible or whatever.). The current plan for compute nodes is to
 use a basic Cent7 image, followed by some Ansible magic to add software,
 mounts, users, slurm config files, etc.
 
-## Potential issues
-* Cloud-init auto-runs yum update on the first boot, which takes approximately forever in computer-time (~10 minutes). 
-* Might be best to create compute nodes initially, and then suspend/shelve them once that initialization happens - 'stop' might be the best way.
+## Current Useage
+To build your own Virtual cluster, starting on your localhost:
 
-## Current Status
+1. If you don't already have an openrc file, see the 
+   [Jetstream Wiki](https://wiki.jetstream-cloud.org).
 
-FIX INSTALL.SH TO GET THE SSH KEY NAME RIGHT!
+1. Clone this repo.
 
-As suspend_program and resume_program and compute_playbook currently 
-stand, they will create a working compute node w/ running slurmd. 
+1. Copy the openrc for the allocation in which you'd like to create a 
+   virtual cluster to this repo.
 
-Install script is working, except for the need to create an openrc.sh
-file in the same directory. 
+1. If you'd like to modify your cluster, now is a good time!
+   This local copy of the repo will be re-created on the headnode, but
+   if you're going to use this to create multiple different VCs, it may be 
+   preferable to make the following modifications in seperate files.
+   * The number of nodes can be set in the slurm.conf file, by editing
+   the NodeName and PartitionName line. 
+   * If you'd like to change the default node size, the ```node_size=```line 
+     in ```slurm_resume.sh``` must be changed.
+   * If you'd like to enable any specific software, you should edit 
+     ```compute_playbook.yml```. The task named "install basic packages"
+     can be easily extended to install anything available from a yum 
+     repository. If you need to *add* a repo, you can copy the task
+     titled "Add OpenHPC 1.3.? Repo". For more detailed configuration,
+     it may be easiest to build your software in /export on the headnode,
+     and only install the necessary libraries via the compute_playbook
+     (or ensure that they're available in the shared filesystem).
+   * For other modifications, feel free to get in touch!
 
-The create/suspend works ONCE the nodes have been initially created. 
-If the node already exists, the openstack stop/start are used.
-Haven't properly tested whether the resume will function still when the node
-doesn't yet exist. Seemed like there may be timeout issues.
+1. Run ```create_headnode.sh``` - it *will* require an ssh key to exist in
+   ```${HOME}/.ssh/id_rsa.pub```. This will be the key used for your jetstream
+   instance! If you prefer to use a different key, be sure to edit this
+   script accordingly. The expected argument is only the headnode name, 
+   and will create an 'm1.small' instance for you.
 
-Testing note:
-Slurm will run suspend/resume in response to 
-scontrol update nodename=compute-[0-1] state=power_down/up
+   ```./create_headnode.sh <headnode-name>```
 
-Might need to change compute node-name to include the OS_USERNAME,
-so that we don't end up with server name clashing...
+   Watch for the ip address of your new instance at the end of the script!
+1. The create_headnode script has copied everything in this directory 
+   to your headnode. You should now be able to ssh in
+   as the centos user, with your default ssh key: 
+   ```ssh centos@<new-headnode-ip>
 
-Something is up with the mount command; further ansible commands FAIL
-after it is run.
+1. Now, in the copied directory, *on the headnode*, run the install.sh script
+   with sudo:
+   ```sudo ./install.sh```. 
+   This script handles all the steps necessary to install slurm, with
+   elastic nodes set. 
 
-## Necessary Bits
+Useage note:
+Slurm will run the suspend/resume scripts in response to 
+```scontrol update nodename=compute-[0-1] state=power_down```
+or
+```scontrol update nodename=compute-[0-1] state=power_up```
 
-
-For Headnode install/setup:
-* Need to set up ansible for compute node acccess
-  * Need ansible.cfg to point to an ssh.cfg
-  * Need the ssh.cfg to point to the same priv key as used in server create
-  * Need to edit the host list on each create/suspend
-  * Have to write headnode private IP into compute\_playbook
-* SLURM USER WILL NEED AN SSH KEY!
-* Need to setfacl on /etc/munge/munge.key to allow slurm to copy this over!!!
-* Headnode needs to create a private network!!!
-  * ResumeProgram also needs to know the name of it.
-  * how will that work with the Atmosphere side?
-  * ALSO, need to create/add an ssh key to openstack!
-    * This ssh key needs to be usable by the slurm user
-    * OR, allow host-based auth on the compute node
-* create a log file in /var/log/slurm\_elastic.log
-  * ```touch /var/log/slurm\_elastic.log && chown slurm:slurm /var/log/slurm\_elastic.log```
-* Export of /home to 10.0.0.0/24 
-* Firewall allow all to 10., allow only ssh from external.
-  * public.xml sets this up properly
-  * ALSO, had to yum install firewalld...
-* just do a global install of ansible on the headnode.
-* files compute nodes must receive:
-  * /etc/slurm/slurm.conf
-  * /etc/passwd
-  * /etc/groups
-  * /etc/hosts
-* list of extra software to install: (extra meaning additional to Cent7 minimal?)
-  * ansible
-  * firewalld
-  * pdsh (BEFORE slurm is started)
-  * OpenMPI
-  * MVAPICH2
-  * openhpc-slurm
-  * openhpc-slurm-server
-  * chronyd?
-  * polictycoreutils-python
-  * tcpdump
-  * bind-utils
-  * strace
-  * lsof
-  * XNIT repo!
-
-These bits need to happen in ResumeProgram
-
-* ResumeProgram needs to create node and attach to the private network
-  * this is done, w/ hardcoded network, etc. 
-    * NEED TO MAKE THIS DYNAMIC! Modify in cloud-init of headnode build!
-  * This is also going to run as the slurm user... permissions issues? solved!
-* must result in started slurmd (does)
-* update nodename via scontrol  (does)
-
-SuspendProgram can just openstack server stop - destroy may also be an option, but the
- initial cloud-init build is very slow!
-
+If compute instances get stuck in a bad state, it's often helpful to
+cycle through the following:
+```scontrol update nodename=compute-[?] state=down reason=resetting```
+```scontrol update nodename=compute-[?] state=power_down```
+```scontrol update nodename=compute-[?] state=idle```
+or to re-run the suspend/resume scripts as above (if the instance
+power state doesn't match the current state as seen by slurm).
