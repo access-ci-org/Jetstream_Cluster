@@ -2,17 +2,15 @@
 
 ## Intro
 
-This is a simple repo to keep track of files, scripts, etc. that will
-be useful for building an image in Jetstream that will act as an 
-elastic SLURM cluster. This README will (until it becomes unwieldy)
-contain notes, plans, etc. Feel free to stick necessary files in the
-top level dir. 
+This repo contains scripts and ansible playbooks for creating a virtual 
+cluster in an Openstack environment, specifically aimed at the XSEDE 
+Jetstream resource.
 
 The basic structure is to have a single image act as headnode, with
-compute nodes managed by SLURM via the openstack API (via curl or
-Ansible or whatever.). The current plan for compute nodes is to
-use a basic Cent7 image, followed by some Ansible magic to add software,
-mounts, users, slurm config files, etc.
+compute nodes managed by SLURM via the openstack API.
+The current plan for compute nodes is to
+use a basic CentOS 7 image, followed by an Ansible playbook to add 
+software, mounts, users, config files, etc. 
 
 ## Current Useage
 To build your own Virtual cluster, starting on your localhost:
