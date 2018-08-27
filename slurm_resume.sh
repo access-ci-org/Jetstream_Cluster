@@ -6,7 +6,7 @@ node_size="m1.small"
 node_image=$(openstack image list -f value | grep -i JS-API-Featured-Centos7- | grep -vi Intel | cut -f 2 -d' '| head -n 1)
 key_name="${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key"
 network_name=tg829096-elastic-net
-log_loc=/var/log/slurm_elastic.log
+log_loc=/var/log/slurm/slurm_elastic.log
 
 echo "Node resume invoked: $0 $*" >> $log_loc
 

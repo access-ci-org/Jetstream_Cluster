@@ -2,7 +2,7 @@
 
 source /etc/slurm/openrc.sh
 
-log_loc=/var/log/slurm_elastic.log
+log_loc=/var/log/slurm/slurm_elastic.log
 #log_loc=/dev/stdout 
 
 echo "Node suspend invoked: $0 $*" >> $log_loc
