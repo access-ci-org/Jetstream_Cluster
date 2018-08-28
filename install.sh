@@ -71,6 +71,13 @@ if [[ ! ("$security_groups" =~ "cluster-internal") ]]; then
   openstack security group rule create --protocol icmp cluster-internal
 fi
 
+#TACC-specific changes:
+
+if [[ $OS_AUTH_URL =~ "tacc" ]]; then
+  #Insert headnode into /etc/hosts
+  echo "$(ip add show dev eth0 | awk '/inet / {sub("/24","",$2); print $2}') $(hostname) $(hostname -s)" >> /etc/hosts
+fi
+
 #Get OS Network name of *this* server, and set as the network for compute-nodes
 headnode_os_subnet=$(openstack server show $(hostname | cut -f 1 -d'.') | awk '/addresses/ {print $4}' | cut -f 1 -d'=')
 sed -i "s/network_name=.*/network_name=$headnode_os_subnet/" ./slurm_resume.sh
@@ -108,7 +115,7 @@ mkdir /var/log/slurm
 
 touch /var/log/slurm/slurm_elastic.log
 
-chown -R slurm:slurm /var/log/slurm/
+chown -R slurm:slurm /var/log/slurm
 
 cp slurm-logrotate.conf /etc/logrotate.d/slurm
 
