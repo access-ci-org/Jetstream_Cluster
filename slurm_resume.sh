@@ -65,22 +65,21 @@ do
   new_ip=$(openstack server show $host | awk '/addresses/ {print gensub(/^.*=/,"","g",$4)}')
   echo "$host ip is $new_ip" >> $log_loc
   sleep 10 # to give sshd time to be available
-  #check that the compute node isn't already in /etc/hosts, if on TACC - otherwise leave commented
-#  ip_check=$(grep $new_ip /etc/hosts)
-#  host_check=$(grep $host /etc/hosts)
-#  if [[ -n $ip_check && ! ( $ip_check =~ $host ) ]]; then
-#   echo "OVERLAPPING ENTRY FOR $new_ip of $host in /etc/hosts: $ip_check" >> $log_loc
-#   exit 2
-#  fi
-#  if [[ -z $host_check ]]; then
-#    echo "$new_ip $host" >> /etc/hosts
-#  fi
-#  if [[ -n $host_check && ! ( $host_check =~ $new_ip ) ]]; then
-#    sed "s/.*$host.*/$new_ip $host/" /etc/hosts
-#  fi
+  ip_check=$(grep $new_ip /etc/hosts)
+  host_check=$(grep $host /etc/hosts)
+  if [[ -n $ip_check && ! ( $ip_check =~ $host ) ]]; then
+   echo "OVERLAPPING ENTRY FOR $new_ip of $host in /etc/hosts: $ip_check" >> $log_loc
+   exit 2
+  fi
+  if [[ -z $host_check ]]; then
+    echo "$new_ip $host" >> /etc/hosts
+  fi
+  if [[ -n $host_check && ! ( $host_check =~ $new_ip ) ]]; then
+    sed "s/.*$host.*/$new_ip $host/" /etc/hosts
+  fi
   test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg centos@$host 'hostname' | tee -a $log_loc)
   #  echo "test1: $test_hostname"
-  until [[ $test_hostname =~ $host ]]; do
+  until [[ -n $test_hostname ]]; do
     sleep 2
     test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg centos@$host 'hostname' | tee -a $log_loc)
   done
@@ -91,7 +90,7 @@ do
   hosts_add_result=$(ansible -m copy -a "src=/etc/hosts dest=/etc/hosts" $host)
   #echo "Tried to add hosts $hosts_add_result" >> $log_loc
   slurm_sync_result=$(ansible -m copy -a "src=/etc/slurm/slurm.conf dest=/etc/slurm/slurm.conf" $host)
-  echo "Tried to sync slurm.conf $slurm_sync_result" >> $log_loc
+  #echo "Tried to sync slurm.conf $slurm_sync_result" >> $log_loc
 
 #Now, safe to update slurm w/ node info
   scontrol update nodename=$host nodeaddr=$new_ip >> $log_loc
