@@ -7,7 +7,8 @@ fi
 
 yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm
 
-yum -y install ohpc-slurm-server ansible mailx environment-modules openmpi bash-completion
+yum -y install ohpc-slurm-server vim ansible mailx lmod-ohpc bash-completion gnu-compilers-ohpc openmpi-gnu-ohpc lmod-defaults-gnu-openmpi-ohpc
+
 
 pip install python-openstackclient
 
@@ -148,8 +149,9 @@ cp slurm_test.job ${HOME}
 #create share directory
 mkdir -m 777 -p /export
 
-#create export of homedirs and /export
+#create export of homedirs and /export and /opt/ohpc/pub
 echo -e "/home 10.0.0.0/24(rw,no_root_squash) \n/export 10.0.0.0/24(rw,no_root_squash)" > /etc/exports
+echo -e "/opt/ohpc/pub 10.0.0.0/24(rw,no_root_squash)" >> /etc/exports
 
 #Start required services
 systemctl enable slurmctld munge nfs-server nfs-lock nfs rpcbind nfs-idmap

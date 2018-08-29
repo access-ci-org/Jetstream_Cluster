@@ -28,37 +28,15 @@
     yum: name={{ item }} state=present
     with_items:
       - "https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm"
-      - "openmpi"       #torque
       - "libselinux-python"
       - "telnet"
       - "bind-utils"
       - "vim"
       - "ohpc-slurm-client"
- #    - "quantum-espresso-openmpi"
- #    - "quantum-espresso"
- #     - "rsync"
- #     - "epel-release"
- #     - "openmpi-devel"       #torque
- #     - "gcc"           
- #     - "gcc-c++"       
- #     - "gcc-gfortran"  
- #     - "openssl-devel" 
- #     - "libxml2-devel" 
- #     - "boost-devel"   
- #     - "net-tools"
- #     - "strace"
- #     - "wget"  # needed for building QE
- #     - "readline-devel"  #req for slurm
- #     - "pam-devel"       # req for slurm
- #     - "perl-ExtUtils-MakeMaker" # req for slurm
- #     - "fftw" # req for QE... need a better way to specify these!!!
- #
-# - name: set up /etc/hosts
-#   template: src=hosts.j2 dest=/etc/hosts
-
-#  - name: install stuff from epel and openHPC
-#    yum: name={{ item }} state=latest
-#    with_items:
+      - "lmod-ohpc"
+#      - "gnu-compilers-ohpc"
+#      - "openmpi-gnu-ohpc"
+#      - "lmod-defaults-gnu-openmpi-ohpc"
 
   - name: fix slurm user uid
     user:
@@ -77,10 +55,6 @@
       - "/var/spool/slurm"
       - "/var/spool/slurm/ctld"
 
- # - name: install pexpect from pip
- #   pip: name=pexpect version=3.3
- #   when: submit_host == "yes"
- 
  # - name: turn off requiretty for sudo
  #   lineinfile:
  #     dest: /etc/sudoers
@@ -135,6 +109,15 @@
     tags:
       - export_home
 
+  - name: ensure /opt/ohpc/pub exists
+    file: path=/opt/ohpt/pub state=directory mode=777 recurse=yes
+ 
+  - name: import /opt/ohpc/pub on compute nodes
+    lineinfile:
+      dest: /etc/fstab
+      line:  "{{ headnode_private_ip.stdout }}:/opt/ohpc/pub  /opt/ohpc/pub  nfs  defaults,nfsvers=4.0 0 0"
+      state: present
+
   - name: ensure /export exists
     file: path=/export state=directory mode=777
  
@@ -178,17 +161,6 @@
     script: /tmp/add_users.sh
     ignore_errors: True
 
-# - name: copy add_users script
-#   synchronize:
-#     mode: push
-#     src: /tmp/add_users.sh
-#     dest: /tmp/add_users.sh
-#     set_remote_user: no
-#     use_ssh_args: yes
-#
-# - name: run add_users.sh
-#   command: /tmp/add_users.sh
-   
   - name: copy munge key from headnode
     synchronize:
       mode: push
