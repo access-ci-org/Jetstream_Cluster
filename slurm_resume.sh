@@ -84,6 +84,8 @@ do
     test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg centos@$host 'hostname' | tee -a $log_loc)
   done
 
+  #reset the hostname JIC
+  hostname_set_result=$(ansible -m hostname -a "name=$host" $host)
   #add users Just in Case
   user_add_result=$(ansible -m script -a "/tmp/add_users.sh" $host)
   #echo "Tried to add users: " $user_add_result >> $log_loc
