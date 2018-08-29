@@ -2,6 +2,7 @@
 #SBATCH -n 2
 #SBATCH -o nodes_%A.out
 
-module load mpi/openmpi-x86_64
+module load gnu
+module load openmpi
 
 mpirun -n 2 hostname
