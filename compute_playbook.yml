@@ -113,7 +113,7 @@
       - export_home
 
   - name: ensure /opt/ohpc/pub exists
-    file: path=/opt/ohpt/pub state=directory mode=777 recurse=yes
+    file: path=/opt/ohpc/pub state=directory mode=777 recurse=yes
  
   - name: import /opt/ohpc/pub on compute nodes
     lineinfile:
