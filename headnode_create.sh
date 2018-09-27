@@ -60,15 +60,15 @@ fi
 #openstack router show ${OS_USERNAME}-api-router
 
 security_groups=$(openstack security group list -f value)
-if [[ ! ("$security_groups" =~ "global-ssh") ]]; then
-  openstack security group create --description "ssh \& icmp enabled" global-ssh
-  openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 global-ssh
-  openstack security group rule create --protocol icmp global-ssh
+if [[ ! ("$security_groups" =~ "$OS_USERNAME-global-ssh") ]]; then
+  openstack security group create --description "ssh \& icmp enabled" $OS_USERNAME-global-ssh
+  openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 $OS_USERNAME-global-ssh
+  openstack security group rule create --protocol icmp $OS_USERNAME-global-ssh
 fi
-if [[ ! ("$security_groups" =~ "cluster-internal") ]]; then
-  openstack security group create --description "internal group for cluster" cluster-internal
-  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/0 cluster-internal
-  openstack security group rule create --protocol icmp cluster-internal
+if [[ ! ("$security_groups" =~ "$OS_USERNAME-cluster-internal") ]]; then
+  openstack security group create --description "internal group for cluster" $OS_USERNAME-cluster-internal
+  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/0 $OS_USERNAME-cluster-internal
+  openstack security group rule create --protocol icmp $OS_USERNAME-cluster-internal
 fi
 
 #Check if ${HOME}/.ssh/id_rsa.pub exists in JS
@@ -93,8 +93,8 @@ else
 fi
 
 image_name=$(openstack image list -f value | grep -i JS-API-Featured-Centos7- | grep -vi Intel | cut -f 2 -d' ')
-echo "openstack server create --user-data prevent-updates.ci --flavor m1.small --image $image_name --key-name $OS_keyname --security-group global-ssh --security-group cluster-internal --nic net-id=${OS_USERNAME}-elastic-net $1"
-openstack server create --user-data prevent-updates.ci --flavor m1.small --image $image_name --key-name $OS_keyname --security-group global-ssh --security-group cluster-internal --nic net-id=${OS_USERNAME}-elastic-net $1
+echo "openstack server create --user-data prevent-updates.ci --flavor m1.small --image $image_name --key-name $OS_keyname --security-group $OS_USERNAME-global-ssh --security-group $OS_USERNAME-cluster-internal --nic net-id=${OS_USERNAME}-elastic-net $1"
+openstack server create --user-data prevent-updates.ci --flavor m1.small --image $image_name --key-name $OS_keyname --security-group $OS_USERNAME-global-ssh --security-group $OS_USERNAME-cluster-internal --nic net-id=${OS_USERNAME}-elastic-net $1
 public_ip=$(openstack floating ip create public | awk '/floating_ip_address/ {print $4}')
 #For some reason there's a time issue here - adding a sleep command to allow network to become ready
 sleep 10
