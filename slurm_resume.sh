@@ -40,7 +40,7 @@ do
     --image $node_image \
     --key-name $key_name \
     --user-data <(cat /etc/slurm/prevent-updates.ci && echo -e "hostname: $host \npreserve_hostname: true\ndebug:") \
-    --security-group global-ssh --security-group cluster-internal \
+    --security-group ${OS_USERNAME}-global-ssh --security-group ${OS_USERNAME}-cluster-internal \
     --nic net-id=$network_name 2>&1 \
     | tee -a $log_loc | awk '/status/ {print $4}')
     

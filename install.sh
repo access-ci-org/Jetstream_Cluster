@@ -62,15 +62,15 @@ fi
 
 #make sure security groups exist... this could cause issues.
 if [[ ! ("$security_groups" =~ "global-ssh") ]]; then
-  openstack security group create --description "ssh \& icmp enabled" global-ssh
-  openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 global-ssh
-  openstack security group rule create --protocol icmp global-ssh
+  openstack security group create --description "ssh \& icmp enabled" ${OS_USERNAME}-global-ssh
+  openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 ${OS_USERNAME}-global-ssh
+  openstack security group rule create --protocol icmp ${OS_USERNAME}-global-ssh
 fi
 if [[ ! ("$security_groups" =~ "cluster-internal") ]]; then
-  openstack security group create --description "internal 10.0.0.0/24 network allowed" cluster-internal
-  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/24 cluster-internal
-  openstack security group rule create --protocol udp --dst-port 1:65535 --remote-ip 10.0.0.0/24 cluster-internal
-  openstack security group rule create --protocol icmp cluster-internal
+  openstack security group create --description "internal 10.0.0.0/24 network allowed" ${OS_USERNAME}-cluster-internal
+  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/24 ${OS_USERNAME}-cluster-internal
+  openstack security group rule create --protocol udp --dst-port 1:65535 --remote-ip 10.0.0.0/24 ${OS_USERNAME}-cluster-internal
+  openstack security group rule create --protocol icmp ${OS_USERNAME}-cluster-internal
 fi
 
 #TACC-specific changes:
