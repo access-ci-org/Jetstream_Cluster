@@ -10,17 +10,7 @@ log_loc=/var/log/slurm/slurm_elastic.log
 
 echo "Node resume invoked: $0 $*" >> $log_loc
 
-#echo -e "\nwrite-files:" > file_init.ci
-#for file in /etc/slurm/slurm.conf /etc/munge/munge.key
-#do
-#  echo "$file"
-#  echo -e "  - encoding: b64\n    content: $(base64 -w 0 $file)\n    owner: root:root\n    path: $file \n    permissions: '$(stat -c "%a" $file)'" >> file_init.ci
-#done
-#
-#cat compute_init.ci file_init.ci > all_init.ci
-
-#eh. useradd won't do anything if the user exists. just have to make sure ansible doesn't flip
-# out when it 'fails' on suspend.
+#useradd won't do anything if the user exists. 
 echo "#!/bin/bash" > /tmp/add_users.sh
 cat /etc/passwd | awk -F':' '$4 >= 1001 && $4 < 65000 {print "useradd -M -u", $3, $1}' >> /tmp/add_users.sh
 
@@ -47,8 +37,16 @@ do
     echo "$host status is: $node_status" >> $log_loc
     
   else
-    node_status=$(openstack server start $host)
-    echo "$host status is: $node_status" >> $log_loc
+#repeat this up to 3 times!
+    count=0
+    declare -i count
+    node_status=""
+    until [[ $node_status == "ACTIVE"  -o count -ge 3 ]]; do
+      node_status=$(openstack server start $host 2>&1)
+      echo "$(date) $host status is: $node_status" >> $log_loc
+      count+=1
+      sleep 5
+    done
 #    new_ip=$(openstack server show $host | awk '/addresses/ {print gensub(/^.*=/,"","g",$4)}')
   fi
 done
@@ -58,7 +56,7 @@ for host in $(scontrol show hostname $1)
 do
   until [[ $node_status == "ACTIVE" ]]; do
     sleep 3
-    node_status=$(openstack server show $host | awk '/status/ {print $4}')
+    node_status=$(openstack server show $host 2>&1 | awk '/status/ {print $4}')
     echo "$host status is: $node_status" >> $log_loc
   done
    
