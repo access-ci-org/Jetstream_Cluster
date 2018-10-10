@@ -58,7 +58,7 @@ do
     if [[ $count == 0 ]]; then
       sed -i "/$host/d" /etc/ansible/hosts
     fi
-    stop_result=$(echo "openstack server stop $host" 2>&1) 
+    stop_result=$(openstack server stop $host 2>&1) 
     echo "$(date) Stopped $host: $stop_result" >> $log_loc
   done
 

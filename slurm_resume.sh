@@ -41,11 +41,15 @@ do
     count=0
     declare -i count
     node_status=""
-    until [[ $node_status == "ACTIVE"  -o count -ge 3 ]]; do
-      node_status=$(openstack server start $host 2>&1)
+    until [[ "${node_status}" = "ACTIVE" ]] || [[ $count -ge 3 ]]; do
+      #Attempt start and wait
+      node_start=$(openstack server start $host 2>&1)
+      echo "$(date) $host started: $node_start" >> $log_loc
+      sleep 5
+      #Check status
+      node_status=$(openstack server show $host 2>&1 | awk '/status/ {print $4}')
       echo "$(date) $host status is: $node_status" >> $log_loc
       count+=1
-      sleep 5
     done
 #    new_ip=$(openstack server show $host | awk '/addresses/ {print gensub(/^.*=/,"","g",$4)}')
   fi
