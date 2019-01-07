@@ -7,25 +7,10 @@ log_loc=/var/log/slurm/slurm_elastic.log
 
 echo "$(date) Node suspend invoked: $0 $*" >> $log_loc
 
-##hostlist=$(openstack server list)
-#
-#
-#for host in $(scontrol show hostname $1)
-#do
-#  sed -i "s/^$host.*//" /etc/ansible/hosts
-#  if [[ "$(echo "$hostlist" | awk -v host=$host '$0 ~ host {print $6}')" == "ACTIVE" ]]; then 
-#    stop_result=$(openstack server stop $host 2>&1) 
-#    echo "$(date) Stopped $host: $stop_result" >> $log_loc
-#  else
-#    echo "$host not ACTIVE" >> $log_loc
-#  fi
-#done
-
-hostlist=$(scontrol show hostname $1 | tr '\n' ' ' | sed 's/[ ]*$//')
-
 ##############################
 # active_hosts takes in a hostlist, and echos an updated list of instances
-# that are still active
+# that are still active - this simplifies the count-loop below, which should
+# loop only over active instances
 ##############################
 active_hosts() {
 
