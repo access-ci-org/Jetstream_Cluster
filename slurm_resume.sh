@@ -46,21 +46,32 @@ do
   done
    
   new_ip=$(openstack server show $host | awk '/addresses/ {print gensub(/^.*=/,"","g",$4)}')
-  echo "$host ip is $new_ip" >> $log_loc
-  sleep 10 # to give sshd time to be available
+  echo "$host ip is $new_ip" >> $log_loc 
+
+  # now that we have the ip, make sure it's in etc/hosts, as we can't always trust to dns
   ip_check=$(grep $new_ip /etc/hosts)
+#  echo "Found $ip_check in /etc/hosts new_ip check" >> $log_loc
   host_check=$(grep $host /etc/hosts)
+#  echo "Found $host_check in /etc/hosts host_check" >> $log_loc
   if [[ -n $ip_check && ! ( $ip_check =~ $host ) ]]; then
+   # this is bad, as slurm_suspend should remove the /etc/hosts entry for old nodes
+   # ACTUALLY, this causes an issue with a compute node that receives the same IP and hasn't been removed from /etc/hosts...
    echo "OVERLAPPING ENTRY FOR $new_ip of $host in /etc/hosts: $ip_check" >> $log_loc
    exit 2
   fi
-  if [[ -z $host_check ]]; then
+  if [[ -n $host_check && ! ( $host_check =~ $new_ip ) ]]; then
+    echo "REPLACING $host_check with $new_ip for $host" >> $log_loc
+    sed -i "s/.*$host.*/$new_ip $host/" /etc/hosts 2>&1 >> $log_loc
+#    echo "$? result of sed" >> $log_loc
+  fi
+  if [[ -z $host_check ]]; then 
+    echo "ADDING NEW ENTRY for $host at $new_ip IN /etc/hosts" >> $log_loc
     echo "$new_ip $host" >> /etc/hosts
   fi
-  if [[ -n $host_check && ! ( $host_check =~ $new_ip ) ]]; then
-    sed "s/.*$host.*/$new_ip $host/" /etc/hosts
-  fi
-  test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg centos@$host 'hostname' | tee -a $log_loc)
+
+  sleep 10 # to give sshd time to be available
+
+  test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg $host 'hostname' | tee -a $log_loc)
   #  echo "test1: $test_hostname"
   until [[ -n $test_hostname ]]; do
     sleep 2
