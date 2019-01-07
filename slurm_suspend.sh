@@ -46,12 +46,12 @@ do
       sed -i "/$host/d" /etc/ansible/hosts
       sed -i "/$host/d" /etc/hosts
     fi
-    stop_result=$(openstack server stop $host 2>&1) 
-    echo "$(date) Stopped $host: $stop_result" >> $log_loc
+    destroy_result=$(openstack server delete $host 2>&1) 
+    echo "$(date) Deleted $host: $destroy_result" >> $log_loc
   done
 
   sleep 5 #wait a bit for hosts to enter STOP state
   count+=1
   hostlist="$(active_hosts "${hostlist}")"
-  echo "$(date) suspend Attempt $count: remaining hosts: $hostlist" >> $log_loc
+  echo "$(date) delete Attempt $count: remaining hosts: $hostlist" >> $log_loc
 done
