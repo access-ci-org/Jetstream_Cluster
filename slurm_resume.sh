@@ -73,9 +73,10 @@ do
 
   test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg $host 'hostname' | tee -a $log_loc)
   #  echo "test1: $test_hostname"
-  until [[ -n $test_hostname ]]; do
-    sleep 2
-    test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg centos@$host 'hostname' | tee -a $log_loc)
+  until [[ -n "${test_hostname}" ]]; do
+    sleep 5
+    test_hostname=$(ssh -q -F /etc/ansible/ssh.cfg $host 'hostname' | tee -a $log_loc)
+#    echo "TESTING SSH ACCESS: $test_hostname" >> $log_loc
   done
 
   #reset the hostname JIC
