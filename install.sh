@@ -114,8 +114,6 @@ chown slurm:slurm /etc/slurm/openrc.sh
 
 chmod 400 /etc/slurm/openrc.sh
 
-cp compute_playbook.yml /etc/slurm/
-
 cp prevent-updates.ci /etc/slurm/
 
 chown slurm:slurm /etc/slurm/prevent-updates.ci
@@ -157,6 +155,11 @@ mkdir -m 777 -p /export
 #create export of homedirs and /export and /opt/ohpc/pub
 echo -e "/home 10.0.0.0/24(rw,no_root_squash) \n/export 10.0.0.0/24(rw,no_root_squash)" > /etc/exports
 echo -e "/opt/ohpc/pub 10.0.0.0/24(rw,no_root_squash)" >> /etc/exports
+
+# build instance for compute base image generation, take snapshot, and destroy it
+echo "Creating comput image!"
+
+ansible-playbook -vvv compute_build_base_img.yml
 
 #Start required services
 systemctl enable slurmctld munge nfs-server nfs-lock nfs rpcbind nfs-idmap
