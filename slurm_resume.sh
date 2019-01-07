@@ -14,8 +14,7 @@ echo "Node resume invoked: $0 $*" >> $log_loc
 echo "#!/bin/bash" > /tmp/add_users.sh
 cat /etc/passwd | awk -F':' '$4 >= 1001 && $4 < 65000 {print "useradd -M -u", $3, $1}' >> /tmp/add_users.sh
 
-#First, loop over hosts and run the openstack create/resume commands for *all* resume hosts at once.
-#Avoids getting stuck if one host fails?
+#First, loop over hosts and run the openstack create commands for *all* resume hosts at once.
 ansible_list=""
 for host in $(scontrol show hostname $1)
 do
@@ -23,6 +22,8 @@ do
 
   echo "openstack server create $host --flavor $node_size --image $node_image --key-name $key_name --user-data <(cat /etc/slurm/prevent-updates.ci && echo -e "hostname: $host \npreserve_hostname: true\ndebug:") --security-group global-ssh --security-group cluster-internal --nic net-id=$network_name" >> $log_loc
 
+# For use when you've hit your security group quota...
+#    --security-group global-ssh --security-group cluster-internal \
     node_status=$(openstack server create $host \
     --flavor $node_size \
     --image $node_image \
