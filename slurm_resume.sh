@@ -79,15 +79,17 @@ do
 #    echo "TESTING SSH ACCESS: $test_hostname" >> $log_loc
   done
 
-  #reset the hostname JIC
-  hostname_set_result=$(ansible -m hostname -a "name=$host" $host)
-  #add users Just in Case
+  #reset the hostname JIC - no need for this w/ correctly built image
+  #hostname_set_result=$(ansible -m hostname -a "name=$host" $host)
+  #add users in case any added since image build
   user_add_result=$(ansible -m script -a "/tmp/add_users.sh" $host)
-  #echo "Tried to add users: " $user_add_result >> $log_loc
+#  echo "Tried to add users: " $user_add_result >> $log_loc
   hosts_add_result=$(ansible -m copy -a "src=/etc/hosts dest=/etc/hosts" $host)
-  #echo "Tried to add hosts $hosts_add_result" >> $log_loc
+#  echo "Tried to add hosts $hosts_add_result" >> $log_loc
   slurm_sync_result=$(ansible -m copy -a "src=/etc/slurm/slurm.conf dest=/etc/slurm/slurm.conf" $host)
-  #echo "Tried to sync slurm.conf $slurm_sync_result" >> $log_loc
+#  echo "Tried to sync slurm.conf $slurm_sync_result" >> $log_loc
+  slurmd_start_result=$(ansible -m service -a "name=slurmd state=started" $host)
+#  echo "Tried to start slurmd $slurm_start_result" >> $log_loc
 
 #Now, safe to update slurm w/ node info
   scontrol update nodename=$host nodeaddr=$new_ip >> $log_loc
