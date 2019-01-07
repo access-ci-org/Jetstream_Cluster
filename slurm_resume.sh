@@ -3,7 +3,7 @@
 source /etc/slurm/openrc.sh
 
 node_size="m1.small"
-node_image=$(openstack image list -f value | grep -i JS-API-Featured-Centos7- | grep -vi Intel | cut -f 2 -d' '| head -n 1)
+node_image=$(openstack image list -f value | grep -i ${OS_USERNAME}-compute-image- | cut -f 2 -d' '| head -n 1)
 key_name="${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key"
 network_name=${OS_USERNAME}-elastic-net
 log_loc=/var/log/slurm/slurm_elastic.log
@@ -21,9 +21,7 @@ for host in $(scontrol show hostname $1)
 do
   echo "$host ansible_user=centos ansible_become=true" >> /etc/ansible/hosts
 
-  if [[ "$(openstack server show $host 2>&1)" =~ "No server with a name or ID of" ]]; then 
-
-    ansible_list+="$host,"
+  echo "openstack server create $host --flavor $node_size --image $node_image --key-name $key_name --user-data <(cat /etc/slurm/prevent-updates.ci && echo -e "hostname: $host \npreserve_hostname: true\ndebug:") --security-group global-ssh --security-group cluster-internal --nic net-id=$network_name" >> $log_loc
 
     node_status=$(openstack server create $host \
     --flavor $node_size \
@@ -35,24 +33,6 @@ do
     | tee -a $log_loc | awk '/status/ {print $4}')
     
     echo "$host status is: $node_status" >> $log_loc
-    
-  else
-#repeat this up to 3 times!
-    count=0
-    declare -i count
-    node_status=""
-    until [[ "${node_status}" = "ACTIVE" ]] || [[ $count -ge 3 ]]; do
-      #Attempt start and wait
-      node_start=$(openstack server start $host 2>&1)
-      echo "$(date) $host started: $node_start" >> $log_loc
-      sleep 5
-      #Check status
-      node_status=$(openstack server show $host 2>&1 | awk '/status/ {print $4}')
-      echo "$(date) $host status is: $node_status" >> $log_loc
-      count+=1
-    done
-#    new_ip=$(openstack server show $host | awk '/addresses/ {print gensub(/^.*=/,"","g",$4)}')
-  fi
 done
 
 #Now, check that hosts are up
@@ -101,7 +81,7 @@ do
 
 done
 
-if [[ -n $ansible_list ]]; then
-  echo "Running ansible on ${ansible_list::-1}" >> $log_loc
-  ansible-playbook -l "${ansible_list::-1}" /etc/slurm/compute_playbook.yml >> $log_loc
-fi
+#if [[ -n $ansible_list ]]; then
+#  echo "Running ansible on ${ansible_list::-1}" >> $log_loc
+#  ansible-playbook -l "${ansible_list::-1}" /etc/slurm/compute_playbook.yml >> $log_loc
+#fi
