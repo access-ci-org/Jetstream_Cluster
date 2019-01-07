@@ -21,7 +21,21 @@ To build your own Virtual cluster, starting on your localhost:
 1. Clone this repo.
 
 1. Copy the openrc for the allocation in which you'd like to create a 
-   virtual cluster to this repo.
+   virtual cluster to this repo. Additionally, please create a file 
+   called ```clouds.yaml``` with the following format (replace values in
+   all caps with actual values, similar to your openrc file)
+```
+clouds:
+ THE-NAME-OF-YOUR-CLOUD:
+  auth: 
+   username: OS-USERNAME-SAME-AS-OPENRC
+   auth_url: SAME-AS-OPENRC
+   project_name: SAME-AS-OPENRC
+   password: SAME-AS-OPENRC
+  user_domain_name: SAME-AS-OPENRC
+  project_domain_name: SAME-AS-OPENRC
+  identity_api_version: 3
+```
 
 1. If you'd like to modify your cluster, now is a good time!
    This local copy of the repo will be re-created on the headnode, but
@@ -32,12 +46,12 @@ To build your own Virtual cluster, starting on your localhost:
    * If you'd like to change the default node size, the ```node_size=```line 
      in ```slurm_resume.sh``` must be changed.
    * If you'd like to enable any specific software, you should edit 
-     ```compute_playbook.yml```. The task named "install basic packages"
+     ```compute_build_base_img.yml```. The task named "install basic packages"
      can be easily extended to install anything available from a yum 
      repository. If you need to *add* a repo, you can copy the task
      titled "Add OpenHPC 1.3.? Repo". For more detailed configuration,
      it may be easiest to build your software in /export on the headnode,
-     and only install the necessary libraries via the compute_playbook
+     and only install the necessary libraries via the compute_build_base_img
      (or ensure that they're available in the shared filesystem).
    * For other modifications, feel free to get in touch!
 
