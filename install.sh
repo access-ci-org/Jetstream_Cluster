@@ -99,11 +99,8 @@ cat slurm-key.pub >> /home/centos/.ssh/authorized_keys
 
 chown -R slurm:slurm /etc/slurm/.ssh
 
-cp /etc/munge/munge.key /etc/slurm/.munge.key
-
-chown slurm:slurm /etc/slurm/.munge.key
-
 setfacl -m u:slurm:rw /etc/hosts
+setfacl -m u:slurm:rwx /etc/
 
 #How to generate a working openrc in the cloud-init script for this? Bash vars available?
 # Gonna be tough, since openrc requires a password...
