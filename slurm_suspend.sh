@@ -31,17 +31,20 @@ return 0
 }
 ##############################
 
-#Now, try 3 times to ensure all hosts are suspended...
 count=0
 declare -i count
 
+hostlist=$(scontrol show hostname $1 | tr '\n' ' ' | sed 's/[ ]*$//')
+
+#Now, try 3 times to ensure all hosts are suspended...
 until [ -z "${hostlist}" -o $count -ge 3 ]; 
 do
   for host in $hostlist 
   do
-    #remove from /etc/ansible/hosts
+    #remove from /etc/ansible/hosts and /etc/hosts
     if [[ $count == 0 ]]; then
       sed -i "/$host/d" /etc/ansible/hosts
+      sed -i "/$host/d" /etc/hosts
     fi
     stop_result=$(openstack server stop $host 2>&1) 
     echo "$(date) Stopped $host: $stop_result" >> $log_loc
