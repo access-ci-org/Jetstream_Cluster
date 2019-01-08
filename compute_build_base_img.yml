@@ -49,11 +49,11 @@
 
   vars:
     compute_base_package_list:
-      - "openmpi"       
       - "libselinux-python"
       - "telnet"
       - "bind-utils"
       - "vim"
+      - "openmpi-gnu-ohpc"
       - "ohpc-slurm-client"
       - "lmod-ohpc"
 
@@ -75,6 +75,11 @@
     yum:
       name: "https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm"
       state: present
+
+  - name: remove environment modules package
+    yum:
+      name: "environment-modules"
+      state: absent
 
   - name: install basic packages
     yum: 
