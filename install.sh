@@ -102,6 +102,8 @@ chown -R slurm:slurm /etc/slurm/.ssh
 setfacl -m u:slurm:rw /etc/hosts
 setfacl -m u:slurm:rwx /etc/
 
+chmod +t /etc
+
 #How to generate a working openrc in the cloud-init script for this? Bash vars available?
 # Gonna be tough, since openrc requires a password...
 cp openrc.sh /etc/slurm/
@@ -155,7 +157,10 @@ echo -e "/opt/ohpc/pub 10.0.0.0/24(rw,no_root_squash)" >> /etc/exports
 # build instance for compute base image generation, take snapshot, and destroy it
 echo "Creating comput image!"
 
-ansible-playbook -vvv compute_build_base_img.yml
+ansible-playbook -v --ssh-common-args='-o StrictHostKeyChecking=no' compute_build_base_img.yml
+
+#to allow other users to run ansible!
+rm /tmp/.ansible
 
 #Start required services
 systemctl enable slurmctld munge nfs-server nfs-lock nfs rpcbind nfs-idmap
