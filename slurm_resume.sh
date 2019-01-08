@@ -61,7 +61,7 @@ do
   fi
   if [[ -n $host_check && ! ( $host_check =~ $new_ip ) ]]; then
     echo "REPLACING $host_check with $new_ip for $host" >> $log_loc
-    sed -i "s/.*$host.*/$new_ip $host/" /etc/hosts 2>&1 >> $log_loc
+    sed "s/.*$host/$new_ip $host/" /etc/hosts 2>&1 | sponge /etc/hosts >> $log_loc # due to the sticky bit required on /etc by munge
 #    echo "$? result of sed" >> $log_loc
   fi
   if [[ -z $host_check ]]; then 
@@ -88,7 +88,7 @@ do
 #  echo "Tried to add hosts $hosts_add_result" >> $log_loc
   slurm_sync_result=$(ansible -m copy -a "src=/etc/slurm/slurm.conf dest=/etc/slurm/slurm.conf" $host)
 #  echo "Tried to sync slurm.conf $slurm_sync_result" >> $log_loc
-  slurmd_start_result=$(ansible -m service -a "name=slurmd state=started" $host)
+  slurmd_start_result=$(ansible -m service -a "name=slurmd state=started enabled=yes" $host)
 #  echo "Tried to start slurmd $slurm_start_result" >> $log_loc
 
 #Now, safe to update slurm w/ node info
