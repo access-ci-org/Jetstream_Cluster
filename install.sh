@@ -160,7 +160,7 @@ echo "Creating comput image!"
 ansible-playbook -v --ssh-common-args='-o StrictHostKeyChecking=no' compute_build_base_img.yml
 
 #to allow other users to run ansible!
-rm /tmp/.ansible
+rm -r /tmp/.ansible
 
 #Start required services
 systemctl enable slurmctld munge nfs-server nfs-lock nfs rpcbind nfs-idmap
