@@ -20,11 +20,11 @@ openstack server image create --name $compute_image $compute_instance
 
 count=0
 declare -i count
-until [[ $count -ge 12 || "$instance_check" =~ "active" ]];
+until [[ $count -ge 20 || "$instance_check" =~ "active" ]];
 do
   instance_check=$(openstack image show -f value -c status $compute_image)
   count+=1
-  sleep 10
+  sleep 15
 done
 
 echo "Done after $count sleeps."
