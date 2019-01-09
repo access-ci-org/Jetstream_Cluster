@@ -81,8 +81,9 @@ if [[ $OS_AUTH_URL =~ "tacc" ]]; then
 fi
 
 #Get OS Network name of *this* server, and set as the network for compute-nodes
-headnode_os_subnet=$(openstack server show $(hostname | cut -f 1 -d'.') | awk '/addresses/ {print $4}' | cut -f 1 -d'=')
-sed -i "s/network_name=.*/network_name=$headnode_os_subnet/" ./slurm_resume.sh
+# Only need this if you've changed the subnet name for some reason
+#headnode_os_subnet=$(openstack server show $(hostname | cut -f 1 -d'.') | awk '/addresses/ {print $4}' | cut -f 1 -d'=')
+#sed -i "s/network_name=.*/network_name=$headnode_os_subnet/" ./slurm_resume.sh
 
 #Set compute node names to $OS_USERNAME-compute-
 sed -i "s/=compute-*/=${OS_USERNAME}-compute-/" ./slurm.conf
