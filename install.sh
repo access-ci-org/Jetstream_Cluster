@@ -131,12 +131,15 @@ setfacl -m u:slurm:rwx /etc/ansible/
 cp slurm_*.sh /usr/local/sbin/
 
 cp cron-node-check.sh /usr/local/sbin/
+cp clean-os-error.sh /usr/local/sbin/
 
 chown slurm:slurm /usr/local/sbin/slurm_*.sh
+chown slurm:slurm /usr/local/sbin/clean-os-error.sh
 
 chown centos:centos /usr/local/sbin/cron-node-check.sh
 
 echo "#13 */6  *  *  * centos     /usr/local/sbin/cron-node-check.sh" >> /etc/crontab
+echo "#*/4 *  *  *  * slurm     /usr/local/sbin/clean_os_error.sh" >> /etc/crontab
 
 #"dynamic" hostname adjustment
 sed -i "s/ControlMachine=slurm-example/ControlMachine=$(hostname -s)/" ./slurm.conf
