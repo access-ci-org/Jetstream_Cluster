@@ -4,8 +4,8 @@
 
   vars:
     compute_base_image: "JS-API-Featured-CentOS7-Dec-14-2018"
-    sec_group_global: "global-ssh"
-    sec_group_internal: "cluster-internal"
+    sec_group_global: "{{ clouds.tacc.auth.username }}-global-ssh"
+    sec_group_internal: "{{ clouds.tacc.auth.username }}-cluster-internal"
     compute_base_size: "m1.small"
     network_name: "{{ clouds.tacc.auth.username }}-elastic-net"
     JS_ssh_keyname: "{{ clouds.tacc.auth.username }}-{{ clouds.tacc.auth.project_name }}-slurm-key"
@@ -199,6 +199,34 @@
  
   - name: enable slurmd
     service: name=slurmd enabled=yes
+
+#cat /etc/systemd/system/multi-user.target.wants/slurmd.service
+#[Unit]
+#Description=Slurm node daemon
+#After=network.target munge.service #CHANGING TO: network-online.target
+#ConditionPathExists=/etc/slurm/slurm.conf
+#
+#[Service]
+#Type=forking
+#EnvironmentFile=-/etc/sysconfig/slurmd
+#ExecStart=/usr/sbin/slurmd $SLURMD_OPTIONS
+#ExecReload=/bin/kill -HUP $MAINPID
+#PIDFile=/var/run/slurmd.pid
+#KillMode=process
+#LimitNOFILE=51200
+#LimitMEMLOCK=infinity
+#LimitSTACK=infinity
+#Delegate=yes
+#
+#
+#[Install]
+#WantedBy=multi-user.target
+
+  - name: change slurmd service "After" to network-online
+    command: sed -i 's/network.target/network-online.target/' /usr/lib/systemd/system/slurmd.service
+
+  - name: add slurmd service "Requires" of network-online
+    command: sed -i '/After=network/aRequires=network-online.target' /usr/lib/systemd/system/slurmd.service
 
 #  - name: mount -a on compute nodes
 #    command: "mount -a"
