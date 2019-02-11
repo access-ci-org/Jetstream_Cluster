@@ -222,11 +222,11 @@
 #[Install]
 #WantedBy=multi-user.target
 
-  - name: change slurmd service "After" to network-online
-    command: sed -i 's/network.target/network-online.target/' /usr/lib/systemd/system/slurmd.service
+  - name: change slurmd service "After" to sshd and remote filesystems
+    command: sed -i 's/network.target/sshd.service remote-fs.target/' /usr/lib/systemd/system/slurmd.service
 
-  - name: add slurmd service "Requires" of network-online
-    command: sed -i '/After=network/aRequires=network-online.target' /usr/lib/systemd/system/slurmd.service
+  - name: add slurmd service "Requires" of sshd and remote filesystems
+    command: sed -i '/After=network/aRequires=sshd.service remote-fs.target' /usr/lib/systemd/system/slurmd.service
 
 #  - name: mount -a on compute nodes
 #    command: "mount -a"
