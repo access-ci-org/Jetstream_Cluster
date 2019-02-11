@@ -20,7 +20,7 @@ for host in $(scontrol show hostname $1)
 do
   echo "$host ansible_user=centos ansible_become=true" >> /etc/ansible/hosts
 
-  echo "openstack server create $host --flavor $node_size --image $node_image --key-name $key_name --user-data <(cat /etc/slurm/prevent-updates.ci && echo -e "hostname: $host \npreserve_hostname: true\ndebug:") --security-group global-ssh --security-group cluster-internal --nic net-id=$network_name" >> $log_loc
+#  echo "openstack server create $host --flavor $node_size --image $node_image --key-name $key_name --user-data <(cat /etc/slurm/prevent-updates.ci && echo -e "hostname: $host \npreserve_hostname: true\ndebug:") --security-group global-ssh --security-group cluster-internal --nic net-id=$network_name" >> $log_loc
 
 # For use when you've hit your security group quota...
 #    --security-group global-ssh --security-group cluster-internal \
@@ -47,6 +47,11 @@ do
    
   new_ip=$(openstack server show $host | awk '/addresses/ {print gensub(/^.*=/,"","g",$4)}')
   echo "$host ip is $new_ip" >> $log_loc 
+
+  if [[ $new_ip =~ "|" ]]; then
+    new_ip=$(host $host | sed 's/.*address //')
+    echo "Falling back on dns hostname for $host: $new_ip" >> $log_loc
+  fi
 
   # now that we have the ip, make sure it's in etc/hosts, as we can't always trust to dns
   ip_check=$(grep $new_ip /etc/hosts)
