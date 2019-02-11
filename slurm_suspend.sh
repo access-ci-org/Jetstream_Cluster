@@ -43,8 +43,8 @@ do
   do
     #remove from /etc/ansible/hosts and /etc/hosts
     if [[ $count == 0 ]]; then
-      sed "/$host/d/" /etc/hosts 2>&1 | sponge /etc/hosts >> $log_loc
-      sed "/$host/d/" /etc/ansible/hosts 2>&1 | sponge /etc/ansible/hosts >> $log_loc
+      sed "/$host/d" /etc/hosts 2>&1 | sponge /etc/hosts >> $log_loc
+      sed "/$host/d" /etc/ansible/hosts 2>&1 | sponge /etc/ansible/hosts >> $log_loc
     fi
     destroy_result=$(openstack server delete $host 2>&1) 
     echo "$(date) Deleted $host: $destroy_result" >> $log_loc
