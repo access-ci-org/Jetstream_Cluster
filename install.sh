@@ -21,6 +21,18 @@ su centos - -c 'cat /home/centos/.ssh/id_rsa.pub >> /home/centos/.ssh/authorized
 
 source ./openrc.sh
 
+#create clouds.yaml file from contents of openrc
+echo -e "clouds: 
+  tacc:
+    auth:
+      username: ${OS_USERNAME}
+      auth_url: ${OS_AUTH_URL}
+      project_name: ${OS_PROJECT_NAME}
+      password: ${OS_PASSWORD}
+    user_domain_name: ${OS_USER_DOMAIN_NAME}
+    project_domain_name: ${OS_PROJECT_DOMAIN_NAME}
+    identity_api_version: 3" > clouds.yaml
+
 # Defining a function here to check for quotas, and exit if this script will cause problems!
 # also, storing 'quotas' in a global var, so we're not calling it every single time
 quotas=$(openstack quota show)
