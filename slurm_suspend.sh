@@ -15,16 +15,21 @@ echo "$(date) Node suspend invoked: $0 $*" >> $log_loc
 active_hosts() {
 
 hostlist="$1"
-os_status_list=$(openstack server list)
+os_status_list=$(openstack server list -f value -c ID -c Name -c Status)
 
 updated_hosts=""
 
 for host in $hostlist
 do
-  if [[ "$(echo "$os_status_list" | awk -v host=$host '$0 ~ host {print $6}')" == "ACTIVE" ]]; then 
+  # the quotes around os_status_list preserve newlines!
+  if [[ "$(echo "$os_status_list" | awk -v host=$host '$0 ~ host {print $3}')" == "ACTIVE" ]]; then
     echo -n "$host "
+  elif [[ $(echo "${os_status_list}" | grep $host | wc -l) -ge 2 ]]; then
+    #switch to using OS id, because we have multiples of the same host
+    echo -n $(echo "${os_status_list}" | awk -v host=$host '$0 ~ host {print $1}')
   fi
 done
+
 
 return 0
 
