@@ -39,6 +39,7 @@ done
 #Now, check that hosts are up
 for host in $(scontrol show hostname $1)
 do
+  node_status="UNKOWN"
   until [[ $node_status == "ACTIVE" ]]; do
     sleep 3
     node_status=$(openstack server show $host 2>&1 | awk '/status/ {print $4}')
