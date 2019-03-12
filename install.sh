@@ -9,7 +9,7 @@ yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-re
 
 yum -y install ohpc-slurm-server vim ansible mailx lmod-ohpc bash-completion gnu-compilers-ohpc openmpi-gnu-ohpc lmod-defaults-gnu-openmpi-ohpc moreutils bind-utils python-openstackclient
 
-#already did this step locally...
+#Comment these next three steps out if re-running locally!
 ssh-keygen -b 2048 -t rsa -P "" -f slurm-key
 
 # generate a local key for centos for after homedirs are mounted!
