@@ -149,7 +149,7 @@ chown slurm:slurm /usr/local/sbin/clean-os-error.sh
 chown centos:centos /usr/local/sbin/cron-node-check.sh
 
 echo "#13 */6  *  *  * centos     /usr/local/sbin/cron-node-check.sh" >> /etc/crontab
-echo "#*/4 *  *  *  * slurm     /usr/local/sbin/clean_os_error.sh" >> /etc/crontab
+echo "#*/4 *  *  *  * slurm     /usr/local/sbin/clean-os-error.sh" >> /etc/crontab
 
 #"dynamic" hostname adjustment
 sed -i "s/ControlMachine=slurm-example/ControlMachine=$(hostname -s)/" ./slurm.conf
