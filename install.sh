@@ -5,12 +5,9 @@ if [[ ! -e ./openrc.sh ]]; then
   exit
 fi
 
-yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm
+yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm centos-release-openstack-rocky
 
-yum -y install ohpc-slurm-server vim ansible mailx lmod-ohpc bash-completion gnu-compilers-ohpc openmpi-gnu-ohpc lmod-defaults-gnu-openmpi-ohpc moreutils bind-utils
-
-
-pip install python-openstackclient
+yum -y install ohpc-slurm-server vim ansible mailx lmod-ohpc bash-completion gnu-compilers-ohpc openmpi-gnu-ohpc lmod-defaults-gnu-openmpi-ohpc moreutils bind-utils python-openstackclient
 
 #already did this step locally...
 ssh-keygen -b 2048 -t rsa -P "" -f slurm-key
