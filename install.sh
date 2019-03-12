@@ -168,8 +168,13 @@ mkdir -m 777 -p /export
 echo -e "/home 10.0.0.0/24(rw,no_root_squash) \n/export 10.0.0.0/24(rw,no_root_squash)" > /etc/exports
 echo -e "/opt/ohpc/pub 10.0.0.0/24(rw,no_root_squash)" >> /etc/exports
 
+#Get latest CentOS7 minimal image for base - if os_image_facts or the os API allowed for wildcards,
+#  this would be different. But this is the world we live in.
+centos_base_image=$(openstack image list | grep -i js-api-featured-centos7 | grep -vi intel | awk '{print $4}')
+sed -i "s/\(\s*compute_base_image: \).*/\1\"${centos_base_image}\"/" compute_build_base_img.yml | head -n 10
+
 # build instance for compute base image generation, take snapshot, and destroy it
-echo "Creating comput image!"
+echo "Creating comput image! based on $centos_base_image"
 
 ansible-playbook -v --ssh-common-args='-o StrictHostKeyChecking=no' compute_build_base_img.yml
 
