@@ -3,7 +3,7 @@
 source /etc/slurm/openrc.sh
 
 node_size="m1.small"
-node_image=$(openstack image list -f value | grep -i ${OS_USERNAME}-compute-image- | cut -f 2 -d' '| head -n 1)
+node_image=$(openstack image list -f value | grep -i ${OS_USERNAME}-compute-image- | cut -f 2 -d' '| tail -n 1)
 key_name="${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key"
 network_name=${OS_USERNAME}-elastic-net
 log_loc=/var/log/slurm/slurm_elastic.log
