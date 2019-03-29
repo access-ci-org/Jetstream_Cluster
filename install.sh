@@ -174,7 +174,7 @@ centos_base_image=$(openstack image list | grep -i js-api-featured-centos7 | gre
 sed -i "s/\(\s*compute_base_image: \).*/\1\"${centos_base_image}\"/" compute_build_base_img.yml | head -n 10
 
 # build instance for compute base image generation, take snapshot, and destroy it
-echo "Creating comput image! based on $centos_base_image"
+echo "Creating compute image! based on $centos_base_image"
 
 ansible-playbook -v --ssh-common-args='-o StrictHostKeyChecking=no' compute_build_base_img.yml
 
