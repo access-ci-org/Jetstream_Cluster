@@ -67,7 +67,7 @@ clouds:
 1. The create_headnode script has copied everything in this directory 
    to your headnode. You should now be able to ssh in
    as the centos user, with your default ssh key: 
-   ```ssh centos@<new-headnode-ip>
+   ```ssh centos@<new-headnode-ip>```
 
 1. Now, in the copied directory, *on the headnode*, run the install.sh script
    with sudo:
