@@ -67,24 +67,38 @@ clouds:
 1. The create_headnode script has copied everything in this directory 
    to your headnode. You should now be able to ssh in
    as the centos user, with your default ssh key: 
+   
    ```ssh centos@<new-headnode-ip>```
 
 1. Now, in the copied directory, *on the headnode*, run the install.sh script
    with sudo:
+   
    ```sudo ./install.sh```. 
+   
    This script handles all the steps necessary to install slurm, with
    elastic nodes set. 
 
 Useage note:
 Slurm will run the suspend/resume scripts in response to 
-```scontrol update nodename=compute-[0-1] state=power_down```
+
+``` bash
+scontrol update nodename=compute-[0-1] state=power_down
+```
+ 
 or
-```scontrol update nodename=compute-[0-1] state=power_up```
+
+```bash
+scontrol update nodename=compute-[0-1] state=power_up
+```
 
 If compute instances get stuck in a bad state, it's often helpful to
 cycle through the following:
-```scontrol update nodename=compute-[?] state=down reason=resetting```
-```scontrol update nodename=compute-[?] state=power_down```
-```scontrol update nodename=compute-[?] state=idle```
+
+``` bash
+scontrol update nodename=compute-[?] state=down reason=resetting
+scontrol update nodename=compute-[?] state=power_down
+scontrol update nodename=compute-[?] state=idle
+```
+
 or to re-run the suspend/resume scripts as above (if the instance
 power state doesn't match the current state as seen by slurm).
