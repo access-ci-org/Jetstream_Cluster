@@ -92,7 +92,7 @@ else
   OS_keyname=${OS_USERNAME}-elastic-key
 fi
 
-image_name=$(openstack image list -f value | grep -i JS-API-Featured-Centos7- | grep -vi Intel | cut -f 2 -d' ')
+centos_base_image=$(openstack image list | grep -iE "API-Featured-centos7-[[:alpha:]]{3,4}-[0-9]{2}-[0-9]{4}" | awk '{print $4}')
 echo "openstack server create --user-data prevent-updates.ci --flavor m1.small --image $image_name --key-name $OS_keyname --security-group $OS_USERNAME-global-ssh --security-group $OS_USERNAME-cluster-internal --nic net-id=${OS_USERNAME}-elastic-net $1"
 openstack server create --user-data prevent-updates.ci --flavor m1.small --image $image_name --key-name $OS_keyname --security-group ${OS_USERNAME}-global-ssh --security-group ${OS_USERNAME}-cluster-internal --nic net-id=${OS_USERNAME}-elastic-net $1
 public_ip=$(openstack floating ip create public | awk '/floating_ip_address/ {print $4}')
