@@ -2,7 +2,7 @@
 
 if [[ ! -e ./openrc.sh ]]; then
   echo "NO OPENRC FOUND! CREATE ONE, AND TRY AGAIN!"
-  exit
+  exit 1
 fi
 
 if [[ $EUID -ne 0 ]]; then
@@ -15,14 +15,28 @@ set -x
 
 yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm centos-release-openstack-rocky
 
-yum -y install ohpc-slurm-server vim ansible mailx lmod-ohpc bash-completion gnu-compilers-ohpc openmpi-gnu-ohpc lmod-defaults-gnu-openmpi-ohpc moreutils bind-utils python-openstackclient
+yum -y install \
+    ohpc-slurm-server \
+    vim ansible \
+    mailx \
+    lmod-ohpc \
+    bash-completion \
+    gnu-compilers-ohpc \
+    openmpi-gnu-ohpc \
+    lmod-defaults-gnu-openmpi-ohpc \
+    moreutils \
+    bind-utils \
+    jq \
+    git \
+    python-openstackclient
 
-#Comment these next three steps out if re-running locally!
-ssh-keygen -b 2048 -t rsa -P "" -f slurm-key
+#create user that can be used to submit jobs
+[ ! -d /home/user ] && useradd -m user
+
+[ ! -f slurm-key ] && ssh-keygen -b 2048 -t rsa -P "" -f slurm-key
 
 # generate a local key for centos for after homedirs are mounted!
-su centos - -c 'ssh-keygen -t rsa -b 2048 -P "" -f /home/centos/.ssh/id_rsa'
-su centos - -c 'cat /home/centos/.ssh/id_rsa.pub >> /home/centos/.ssh/authorized_keys'
+[ ! -f /home/centos/.ssh/id_rsa ] && su centos - -c 'ssh-keygen -t rsa -b 2048 -P "" -f /home/centos/.ssh/id_rsa && cat /home/centos/.ssh/id_rsa.pub >> /home/centos/.ssh/authorized_keys'
 
 source ./openrc.sh
 
@@ -134,7 +148,7 @@ cp prevent-updates.ci /etc/slurm/
 
 chown slurm:slurm /etc/slurm/prevent-updates.ci
 
-mkdir /var/log/slurm
+mkdir -p /var/log/slurm
 
 touch /var/log/slurm/slurm_elastic.log
 touch /var/log/slurm/os_clean.log
@@ -195,7 +209,3 @@ systemctl enable slurmctld munge nfs-server nfs-lock nfs rpcbind nfs-idmap
 systemctl start munge slurmctld nfs-server nfs-lock nfs rpcbind nfs-idmap
 
 echo -e "If you wish to enable an email when node state is drain or down, please uncomment \nthe cron-node-check.sh job in /etc/crontab, and place your email of choice in the 'email_addr' variable \nat the beginning of /usr/local/sbin/cron-node-check.sh"
-
-echo "removing openrc.sh and clouds.yaml which contains openstack password. (once you are done with install, you can remove this whole directory)".
-rm openrc.sh
-rm clouds.yaml
