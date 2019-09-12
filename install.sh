@@ -196,4 +196,6 @@ systemctl start munge slurmctld nfs-server nfs-lock nfs rpcbind nfs-idmap
 
 echo -e "If you wish to enable an email when node state is drain or down, please uncomment \nthe cron-node-check.sh job in /etc/crontab, and place your email of choice in the 'email_addr' variable \nat the beginning of /usr/local/sbin/cron-node-check.sh"
 
+echo "removing openrc.sh and clouds.yaml which contains openstack password. (once you are done with install, you can remove this whole directory)".
 rm openrc.sh
+rm clouds.yaml
