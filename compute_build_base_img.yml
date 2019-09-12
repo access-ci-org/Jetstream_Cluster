@@ -3,7 +3,7 @@
 - hosts: localhost
 
   vars:
-    compute_base_image: "JS-API-Featured-CentOS7-May-20-2019"
+    compute_base_image: "JS-API-Featured-CentOS7-Sep-09-2019"
     sec_group_global: "{{ clouds.tacc.auth.username }}-global-ssh"
     sec_group_internal: "{{ clouds.tacc.auth.username }}-cluster-internal"
     compute_base_size: "m1.small"
@@ -56,6 +56,14 @@
       - "openmpi-gnu-ohpc"
       - "ohpc-slurm-client"
       - "lmod-ohpc"
+      - "epel-release"
+      - "git"
+      - "bind-utils"
+      - "gcc"
+      - "wget"
+      - "jq"
+      - "nodejs"
+      - "singularity"
 
   tasks:
 
@@ -202,6 +210,10 @@
  
   - name: enable slurmd
     service: name=slurmd enabled=yes
+
+  - name: create local user called "user"
+    user:
+      name: user
 
 #cat /etc/systemd/system/multi-user.target.wants/slurmd.service
 #[Unit]
