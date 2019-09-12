@@ -9,6 +9,7 @@ if [[ -z "$1" ]]; then
   echo "NO SERVER NAME GIVEN! Please re-run with ./headnode_create.sh <server-name>"
   exit
 fi
+server_name=$1
 
 if [[ ! -e ${HOME}/.ssh/id_rsa.pub ]]; then
 #This may be temporary... but seems fairly reasonable.
@@ -21,25 +22,29 @@ source ./openrc.sh
 # Defining a function here to check for quotas, and exit if this script will cause problems!
 # also, storing 'quotas' in a global var, so we're not calling it every single time
 quotas=$(openstack quota show)
-quota_check () 
-{
-quota_name=$1
-type_name=$2 #the name for a quota and the name for the thing itself are not the same
-number_created=$3 #number of the thing that we'll create here.
+quota_check () {
+    quota_name=$1
+    type_name=$2 #the name for a quota and the name for the thing itself are not the same
+    number_created=$3 #number of the thing that we'll create here.
 
-current_num=$(openstack $type_name list -f value | wc -l)
+    echo "checking quota $quota_name"
+    current_num=$(openstack $type_name list -f value | wc -l)
 
-max_types=$(echo "$quotas" | awk -v quota=$quota_name '$0 ~ quota {print $4}')
+    max_types=$(echo "$quotas" | awk -v quota=$quota_name '$0 ~ quota {print $4}')
 
-#echo "checking quota for $quota_name of $type_name to create $number_created - want $current_num to be less than $max_types"
+    #echo "checking quota for $quota_name of $type_name to create $number_created - want $current_num to be less than $max_types"
 
-if [[ "$current_num" -lt "$((max_types + number_created))" ]]; then 
-  return 0
-fi
-return 1
+    if [[ "$current_num" -lt "$((max_types + number_created))" ]]; then 
+      return 0
+    fi
+
+    return 1
 }
 
+set -x #show use which commands are executed
+set -e #terminate as soon as any command fails
 
+quota_check "secgroups" "security group" 1
 quota_check "networks" "network" 1
 quota_check "subnets" "subnet" 1
 quota_check "routers" "router" 1
@@ -77,7 +82,7 @@ if [[ -e ${HOME}/.ssh/id_rsa.pub ]]; then
 fi
 openstack_keys=$(openstack keypair list -f value)
 
-home_key_in_OS=$(echo "$openstack_keys" | awk -v mykey=$home_key_fingerprint '$2 ~ mykey {print $1}')
+home_key_in_OS=$(echo "$openstack_keys" | awk -v mykey=$home_key_fingerprint '$2 ~ mykey {print $server_name}')
 
 if [[ -n "$home_key_in_OS" ]]; then
   OS_keyname=$home_key_in_OS
@@ -92,17 +97,27 @@ else
   OS_keyname=${OS_USERNAME}-elastic-key
 fi
 
-image_name=$(openstack image list -f value | grep -i JS-API-Featured-Centos7- | grep -vi Intel | cut -f 2 -d' ')
-echo "openstack server create --user-data prevent-updates.ci --flavor m1.small --image $image_name --key-name $OS_keyname --security-group $OS_USERNAME-global-ssh --security-group $OS_USERNAME-cluster-internal --nic net-id=${OS_USERNAME}-elastic-net $1"
-openstack server create --user-data prevent-updates.ci --flavor m1.small --image $image_name --key-name $OS_keyname --security-group ${OS_USERNAME}-global-ssh --security-group ${OS_USERNAME}-cluster-internal --nic net-id=${OS_USERNAME}-elastic-net $1
+image_name=$(openstack image list -f value | grep -i JS-API-Featured-Centos7- | grep -vi Intel | cut -f 2 -d' ' | tail -1)
+
+openstack server create 
+    --user-data prevent-updates.ci \
+    --flavor m1.small \
+    --image $image_name \
+    --key-name $OS_keyname \
+    --security-group ${OS_USERNAME}-global-ssh \
+    --security-group ${OS_USERNAME}-cluster-internal \
+    --nic net-id=${OS_USERNAME}-elastic-net \
+    $server_name
+
 public_ip=$(openstack floating ip create public | awk '/floating_ip_address/ {print $4}')
+
 #For some reason there's a time issue here - adding a sleep command to allow network to become ready
 sleep 10
-openstack server add floating ip $1 $public_ip
+openstack server add floating ip $server_name $public_ip
 
 hostname_test=$(ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@$public_ip 'hostname')
 echo "test1: $hostname_test"
-until [[ $hostname_test =~ "$1" ]]; do
+until [[ $hostname_test =~ "$server_name" ]]; do
   sleep 2
   hostname_test=$(ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@$public_ip 'hostname')
   echo "ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@$public_ip 'hostname'"

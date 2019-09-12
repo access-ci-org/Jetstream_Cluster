@@ -5,6 +5,14 @@ if [[ ! -e ./openrc.sh ]]; then
   exit
 fi
 
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root"
+   exit 1
+fi
+
+set -e
+set -x
+
 yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm centos-release-openstack-rocky
 
 yum -y install ohpc-slurm-server vim ansible mailx lmod-ohpc bash-completion gnu-compilers-ohpc openmpi-gnu-ohpc lmod-defaults-gnu-openmpi-ohpc moreutils bind-utils python-openstackclient
@@ -27,7 +35,7 @@ echo -e "clouds:
       project_name: ${OS_PROJECT_NAME}
       password: ${OS_PASSWORD}
     user_domain_name: ${OS_USER_DOMAIN_NAME}
-    project_domain_name: ${OS_PROJECT_DOMAIN_NAME}
+    project_domain_id: ${OS_PROJECT_DOMAIN_ID}
     identity_api_version: 3" > clouds.yaml
 
 # Defining a function here to check for quotas, and exit if this script will cause problems!
@@ -187,3 +195,5 @@ systemctl enable slurmctld munge nfs-server nfs-lock nfs rpcbind nfs-idmap
 systemctl start munge slurmctld nfs-server nfs-lock nfs rpcbind nfs-idmap
 
 echo -e "If you wish to enable an email when node state is drain or down, please uncomment \nthe cron-node-check.sh job in /etc/crontab, and place your email of choice in the 'email_addr' variable \nat the beginning of /usr/local/sbin/cron-node-check.sh"
+
+rm openrc.sh
