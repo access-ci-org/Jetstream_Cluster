@@ -2,8 +2,11 @@
 
 source openrc.sh
 
-compute_image="${OS_USERNAME}-compute-image-$(date +%m-%d-%Y)"
-compute_instance="compute-${OS_USERNAME}-base-instance"
+#compute_instance="compute-${cluster_name}-base-instance"
+cluster_name=$(hostname -s)
+
+compute_instance=$1
+compute_image="${cluster_name}-compute-image-$(date +%m-%d-%Y)"
 
 openstack server stop $compute_instance
 

@@ -4,11 +4,11 @@
 
   vars:
     compute_base_image: "JS-API-Featured-CentOS7-Sep-09-2019"
-    sec_group_global: "{{ clouds.tacc.auth.username }}-global-ssh"
-    sec_group_internal: "{{ clouds.tacc.auth.username }}-cluster-internal"
+    sec_group_global: "{{ clouds.tacc.cluster_name }}-global-ssh"
+    sec_group_internal: "{{ clouds.tacc.cluster_name }}-cluster-internal"
     compute_base_size: "m1.small"
-    network_name: "{{ clouds.tacc.auth.username }}-elastic-net"
-    JS_ssh_keyname: "{{ clouds.tacc.auth.username }}-{{ clouds.tacc.auth.project_name }}-slurm-key"
+    network_name: "{{ clouds.tacc.cluster_name }}-elastic-net"
+    JS_ssh_keyname: "{{ clouds.tacc.cluster_name }}-{{ clouds.tacc.auth.project_name }}-slurm-key"
 
   vars_files:
     - clouds.yaml
@@ -19,7 +19,7 @@
     os_server:
       timeout: 300
       state: present
-      name: "compute-{{ clouds.tacc.auth.username }}-base-instance"
+      name: "compute-{{ clouds.tacc.cluster_name }}-base-instance"
       cloud: "tacc"
       image: "{{ compute_base_image }}"
       key_name: "{{ JS_ssh_keyname }}"
@@ -56,7 +56,6 @@
       - "openmpi-gnu-ohpc"
       - "ohpc-slurm-client"
       - "lmod-ohpc"
-      - "epel-release"
       - "git"
       - "bind-utils"
       - "gcc"
@@ -254,11 +253,13 @@
   tasks:
 
   - name: create compute instance snapshot
-    script: ./compute_take_snapshot.sh
+    script: ./compute_take_snapshot.sh "compute-{{ clouds.tacc.cluster_name }}-base-instance"
 
   - name: remove compute instance
     os_server:
       timeout: 200
       state: absent
-      name: "compute-{{ clouds.tacc.auth.username }}-base-instance"
+      name: "compute-{{ clouds.tacc.cluster_name }}-base-instance"
       cloud: "tacc"
+
+

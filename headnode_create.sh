@@ -52,28 +52,27 @@ quota_check "key-pairs" "keypair" 1
 quota_check "instances" "server" 1
 
 # Ensure that the correct private network/router/subnet exists
-if [[ -z "$(openstack network list | grep ${OS_USERNAME}-elastic-net)" ]]; then
-  openstack network create ${OS_USERNAME}-elastic-net
-  openstack subnet create --network ${OS_USERNAME}-elastic-net --subnet-range 10.0.0.0/24 ${OS_USERNAME}-elastic-subnet1
+if [[ -z "$(openstack network list | grep ${server_name}-elastic-net)" ]]; then
+  openstack network create ${server_name}-elastic-net
+  openstack subnet create --network ${server_name}-elastic-net --subnet-range 10.0.0.0/24 ${server_name}-elastic-subnet1
 fi
 ##openstack subnet list
-if [[ -z "$(openstack router list | grep ${OS_USERNAME}-elastic-router)" ]]; then
-  openstack router create ${OS_USERNAME}-elastic-router
-  openstack router add subnet ${OS_USERNAME}-elastic-router ${OS_USERNAME}-elastic-subnet1
-  openstack router set --external-gateway public ${OS_USERNAME}-elastic-router
+if [[ -z "$(openstack router list | grep ${server_name}-elastic-router)" ]]; then
+  openstack router create ${server_name}-elastic-router
+  openstack router add subnet ${server_name}-elastic-router ${server_name}-elastic-subnet1
+  openstack router set --external-gateway public ${server_name}-elastic-router
 fi
-#openstack router show ${OS_USERNAME}-api-router
 
 security_groups=$(openstack security group list -f value)
-if [[ ! ("$security_groups" =~ "${OS_USERNAME}-global-ssh") ]]; then
-  openstack security group create --description "ssh \& icmp enabled" $OS_USERNAME-global-ssh
-  openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 $OS_USERNAME-global-ssh
-  openstack security group rule create --protocol icmp $OS_USERNAME-global-ssh
+if [[ ! ("$security_groups" =~ "${server_name}-global-ssh") ]]; then
+  openstack security group create --description "ssh \& icmp enabled" $server_name-global-ssh
+  openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 $server_name-global-ssh
+  openstack security group rule create --protocol icmp $server_name-global-ssh
 fi
-if [[ ! ("$security_groups" =~ "${OS_USERNAME}-cluster-internal") ]]; then
-  openstack security group create --description "internal group for cluster" $OS_USERNAME-cluster-internal
-  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/0 $OS_USERNAME-cluster-internal
-  openstack security group rule create --protocol icmp $OS_USERNAME-cluster-internal
+if [[ ! ("$security_groups" =~ "${server_name}-cluster-internal") ]]; then
+  openstack security group create --description "internal group for cluster" $server_name-cluster-internal
+  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/0 $server_name-cluster-internal
+  openstack security group rule create --protocol icmp $server_name-cluster-internal
 fi
 
 #Check if ${HOME}/.ssh/id_rsa.pub exists in JS
@@ -86,27 +85,27 @@ home_key_in_OS=$(echo "$openstack_keys" | awk -v mykey=$home_key_fingerprint '$2
 
 if [[ -n "$home_key_in_OS" ]]; then
   OS_keyname=$home_key_in_OS
-elif [[ -n $(echo "$openstack_keys" | grep ${OS_USERNAME}-elastic-key) ]]; then
-  openstack keypair delete ${OS_USERNAME}-elastic-key
+elif [[ -n $(echo "$openstack_keys" | grep ${server_name}-elastic-key) ]]; then
+  openstack keypair delete ${server_name}-elastic-key
 # This doesn't need to depend on the OS_PROJECT_NAME, as the slurm-key does, in install.sh and slurm_resume
-  openstack keypair create --public-key ${HOME}/.ssh/id_rsa.pub ${OS_USERNAME}-elastic-key
-  OS_keyname=${OS_USERNAME}-elastic-key
+  openstack keypair create --public-key ${HOME}/.ssh/id_rsa.pub ${server_name}-elastic-key
+  OS_keyname=${server_name}-elastic-key
 else
 # This doesn't need to depend on the OS_PROJECT_NAME, as the slurm-key does, in install.sh and slurm_resume
-  openstack keypair create --public-key ${HOME}/.ssh/id_rsa.pub ${OS_USERNAME}-elastic-key
-  OS_keyname=${OS_USERNAME}-elastic-key
+  openstack keypair create --public-key ${HOME}/.ssh/id_rsa.pub ${server_name}-elastic-key
+  OS_keyname=${server_name}-elastic-key
 fi
 
 image_name=$(openstack image list -f value | grep -i JS-API-Featured-Centos7- | grep -vi Intel | cut -f 2 -d' ' | tail -1)
 
-openstack server create 
+openstack server create \
     --user-data prevent-updates.ci \
     --flavor m1.small \
     --image $image_name \
     --key-name $OS_keyname \
-    --security-group ${OS_USERNAME}-global-ssh \
-    --security-group ${OS_USERNAME}-cluster-internal \
-    --nic net-id=${OS_USERNAME}-elastic-net \
+    --security-group ${server_name}-global-ssh \
+    --security-group ${server_name}-cluster-internal \
+    --nic net-id=${server_name}-elastic-net \
     $server_name
 
 public_ip=$(openstack floating ip create public | awk '/floating_ip_address/ {print $4}')

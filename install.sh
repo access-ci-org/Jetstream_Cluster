@@ -28,6 +28,7 @@ yum -y install \
     bind-utils \
     jq \
     git \
+    singularity \
     python-openstackclient
 
 #create user that can be used to submit jobs
@@ -40,6 +41,8 @@ yum -y install \
 
 source ./openrc.sh
 
+cluster_name=$(hostname -s)
+
 #create clouds.yaml file from contents of openrc
 echo -e "clouds: 
   tacc:
@@ -48,6 +51,7 @@ echo -e "clouds:
       auth_url: ${OS_AUTH_URL}
       project_name: ${OS_PROJECT_NAME}
       password: ${OS_PASSWORD}
+    cluster_name: $cluster_name
     user_domain_name: ${OS_USER_DOMAIN_NAME}
     project_domain_id: ${OS_PROJECT_DOMAIN_ID}
     identity_api_version: 3" > clouds.yaml
@@ -84,24 +88,24 @@ fi
 
 #quota_check "instances" "server" 1
 
-if [[ -n $(openstack keypair list | grep ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key) ]]; then
-  openstack keypair delete ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key
-  openstack keypair create --public-key slurm-key.pub ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key
+if [[ -n $(openstack keypair list | grep ${cluster_name}-${OS_PROJECT_NAME}-slurm-key) ]]; then
+  openstack keypair delete ${cluster_name}-${OS_PROJECT_NAME}-slurm-key
+  openstack keypair create --public-key slurm-key.pub ${cluster_name}-${OS_PROJECT_NAME}-slurm-key
 else
-  openstack keypair create --public-key slurm-key.pub ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key
+  openstack keypair create --public-key slurm-key.pub ${cluser_name}-${OS_PROJECT_NAME}-slurm-key
 fi
 
 #make sure security groups exist... this could cause issues.
 if [[ ! ("$security_groups" =~ "global-ssh") ]]; then
-  openstack security group create --description "ssh \& icmp enabled" ${OS_USERNAME}-global-ssh
-  openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 ${OS_USERNAME}-global-ssh
-  openstack security group rule create --protocol icmp ${OS_USERNAME}-global-ssh
+  openstack security group create --description "ssh \& icmp enabled" ${cluster_name}-global-ssh
+  openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 ${cluster_name}-global-ssh
+  openstack security group rule create --protocol icmp ${cluster_name}-global-ssh
 fi
 if [[ ! ("$security_groups" =~ "cluster-internal") ]]; then
-  openstack security group create --description "internal 10.0.0.0/24 network allowed" ${OS_USERNAME}-cluster-internal
-  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/24 ${OS_USERNAME}-cluster-internal
-  openstack security group rule create --protocol udp --dst-port 1:65535 --remote-ip 10.0.0.0/24 ${OS_USERNAME}-cluster-internal
-  openstack security group rule create --protocol icmp ${OS_USERNAME}-cluster-internal
+  openstack security group create --description "internal 10.0.0.0/24 network allowed" ${cluster_name}-cluster-internal
+  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/24 ${cluster_name}-cluster-internal
+  openstack security group rule create --protocol udp --dst-port 1:65535 --remote-ip 10.0.0.0/24 ${cluster_name}-cluster-internal
+  openstack security group rule create --protocol icmp ${cluster_name}-cluster-internal
 fi
 
 #TACC-specific changes:
@@ -117,8 +121,8 @@ fi
 #sed -i "s/network_name=.*/network_name=$headnode_os_subnet/" ./slurm_resume.sh
 
 #Set compute node names to $OS_USERNAME-compute-
-sed -i "s/=compute-*/=${OS_USERNAME}-compute-/" ./slurm.conf
-sed -i "s/Host compute-*/Host ${OS_USERNAME}-compute-/" ./ssh.cfg
+sed -i "s/=compute-*/=${cluster_name}-compute-/" ./slurm.conf
+sed -i "s/Host compute-*/Host ${cluster_name}-compute-/" ./ssh.cfg
 
 # Deal with files required by slurm - better way to encapsulate this section?
 
@@ -161,6 +165,7 @@ setfacl -m u:slurm:rw /etc/ansible/hosts
 setfacl -m u:slurm:rwx /etc/ansible/
 
 cp slurm_*.sh /usr/local/sbin/
+#sed -i "s/node_size=.*/node_size=m1.xlarge/" /usr/local/sbin/slurm_resume.sh
 
 cp cron-node-check.sh /usr/local/sbin/
 cp clean-os-error.sh /usr/local/sbin/
@@ -209,3 +214,5 @@ systemctl enable slurmctld munge nfs-server nfs-lock nfs rpcbind nfs-idmap
 systemctl start munge slurmctld nfs-server nfs-lock nfs rpcbind nfs-idmap
 
 echo -e "If you wish to enable an email when node state is drain or down, please uncomment \nthe cron-node-check.sh job in /etc/crontab, and place your email of choice in the 'email_addr' variable \nat the beginning of /usr/local/sbin/cron-node-check.sh"
+
+

@@ -2,10 +2,11 @@
 
 source /etc/slurm/openrc.sh
 
+cluster_name=$(hostname -s)
 node_size="m1.small"
-node_image=$(openstack image list -f value | grep -i ${OS_USERNAME}-compute-image- | cut -f 2 -d' '| tail -n 1)
-key_name="${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key"
-network_name=${OS_USERNAME}-elastic-net
+node_image=$(openstack image list -f value | grep -i ${cluster_name}-compute-image- | cut -f 2 -d' '| tail -n 1)
+key_name="${cluster_name}-${OS_PROJECT_NAME}-slurm-key"
+network_name=${cluster_name}-elastic-net
 log_loc=/var/log/slurm/slurm_elastic.log
 
 echo "Node resume invoked: $0 $*" >> $log_loc
@@ -29,7 +30,7 @@ do
     --image $node_image \
     --key-name $key_name \
     --user-data <(cat /etc/slurm/prevent-updates.ci && echo -e "hostname: $host \npreserve_hostname: true\ndebug:") \
-    --security-group ${OS_USERNAME}-global-ssh --security-group ${OS_USERNAME}-cluster-internal \
+    --security-group ${cluster_name}-global-ssh --security-group ${cluster_name}-cluster-internal \
     --nic net-id=$network_name 2>&1 \
     | tee -a $log_loc | awk '/status/ {print $4}')
     
