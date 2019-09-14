@@ -26,6 +26,7 @@ yum -y install \
     lmod-defaults-gnu-openmpi-ohpc \
     moreutils \
     bind-utils \
+    nodejs \
     jq \
     git \
     singularity \
