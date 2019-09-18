@@ -21,21 +21,7 @@ To build your own Virtual cluster, starting on your localhost:
 1. Clone this repo.
 
 1. Copy the openrc for the allocation in which you'd like to create a 
-   virtual cluster to this repo. Additionally, please create a file 
-   called ```clouds.yaml``` with the following format (replace values in
-   all caps with actual values, similar to your openrc file)
-```
-clouds:
- THE-NAME-OF-YOUR-CLOUD:
-  auth: 
-   username: OS-USERNAME-SAME-AS-OPENRC
-   auth_url: SAME-AS-OPENRC
-   project_name: SAME-AS-OPENRC
-   password: SAME-AS-OPENRC
-  user_domain_name: SAME-AS-OPENRC
-  project_domain_name: SAME-AS-OPENRC
-  identity_api_version: 3
-```
+   virtual cluster to this repo. 
 
 1. If you'd like to modify your cluster, now is a good time!
    This local copy of the repo will be re-created on the headnode, but
