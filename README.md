@@ -55,16 +55,16 @@ clouds:
      (or ensure that they're available in the shared filesystem).
    * For other modifications, feel free to get in touch!
 
-1. Run ```create_headnode.sh``` - it *will* require an ssh key to exist in
+1. Run ```headnode_create.sh``` - it *will* require an ssh key to exist in
    ```${HOME}/.ssh/id_rsa.pub```. This will be the key used for your jetstream
    instance! If you prefer to use a different key, be sure to edit this
    script accordingly. The expected argument is only the headnode name, 
    and will create an 'm1.small' instance for you.
 
-   ```./create_headnode.sh <headnode-name>```
+   ```./headnode_create.sh <headnode-name>```
 
    Watch for the ip address of your new instance at the end of the script!
-1. The create_headnode script has copied everything in this directory 
+1. The headnode_create script has copied everything in this directory 
    to your headnode. You should now be able to ssh in
    as the centos user, with your default ssh key: 
    
