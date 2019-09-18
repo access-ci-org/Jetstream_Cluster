@@ -109,7 +109,7 @@ echo -e "openstack server create\
 openstack server create \
         --user-data prevent-updates.ci \
         --flavor m1.small \
-        --image ${image_name} \
+        --image ${centos_base_image} \
         --key-name ${OS_keyname} \
         --security-group ${OS_USERNAME}-global-ssh \
         --security-group ${OS_USERNAME}-cluster-internal \
