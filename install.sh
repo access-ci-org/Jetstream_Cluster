@@ -2,19 +2,40 @@
 
 if [[ ! -e ./openrc.sh ]]; then
   echo "NO OPENRC FOUND! CREATE ONE, AND TRY AGAIN!"
-  exit
+  exit 1
 fi
 
-yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm centos-release-openstack-rocky
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root"
+   exit 1
+fi
 
-yum -y install ohpc-slurm-server vim ansible mailx lmod-ohpc bash-completion gnu-compilers-ohpc openmpi-gnu-ohpc lmod-defaults-gnu-openmpi-ohpc moreutils bind-utils python-openstackclient
+yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm \
+       centos-release-openstack-rocky
 
-#Comment these next three steps out if re-running locally!
-ssh-keygen -b 2048 -t rsa -P "" -f slurm-key
+yum -y install \
+        ohpc-slurm-server \ 
+        vim \ 
+        ansible \ 
+        mailx \ 
+        lmod-ohpc \ 
+        bash-completion \ 
+        gnu-compilers-ohpc \ 
+        openmpi-gnu-ohpc \ 
+        singularity-ohpc \
+        lmod-defaults-gnu-openmpi-ohpc \ 
+        moreutils \ 
+        bind-utils \ 
+        python-openstackclient
+
+#create user that can be used to submit jobs
+[ ! -d /home/gateway-user ] && useradd -m gateway-user
+
+[ ! -f slurm-key ] && ssh-keygen -b 2048 -t rsa -P "" -f slurm-key
 
 # generate a local key for centos for after homedirs are mounted!
 su centos - -c 'ssh-keygen -t rsa -b 2048 -P "" -f /home/centos/.ssh/id_rsa'
-su centos - -c 'cat /home/centos/.ssh/id_rsa.pub >> /home/centos/.ssh/authorized_keys'
+[ ! -f /home/centos/.ssh/id_rsa ] && su centos - -c 'ssh-keygen -t rsa -b 2048 -P "" -f /home/centos/.ssh/id_rsa && cat /home/centos/.ssh/id_rsa.pub >> /home/centos/.ssh/authorized_keys'
 
 source ./openrc.sh
 
@@ -27,8 +48,14 @@ echo -e "clouds:
       project_name: ${OS_PROJECT_NAME}
       password: ${OS_PASSWORD}
     user_domain_name: ${OS_USER_DOMAIN_NAME}
-    project_domain_name: ${OS_PROJECT_DOMAIN_NAME}
     identity_api_version: 3" > clouds.yaml
+
+# There are different versions of openrc floating around between the js wiki and auto-generated openrc files.
+if [[ -n ${OS_PROJECT_DOMAIN_NAME} ]]; then
+  echo -e "    project_domain_name: ${OS_PROJECT_DOMAIN_NAME}" >> clouds.yaml
+elif [[ -n ${OS_PROJECT_DOMAIN_ID} ]]; then
+  echo -e "    project_domain_id: ${OS_PROJECT_DOMAIN_ID}" >> clouds.yaml
+fi
 
 # Defining a function here to check for quotas, and exit if this script will cause problems!
 # also, storing 'quotas' in a global var, so we're not calling it every single time
@@ -126,7 +153,7 @@ cp prevent-updates.ci /etc/slurm/
 
 chown slurm:slurm /etc/slurm/prevent-updates.ci
 
-mkdir /var/log/slurm
+mkdir -p /var/log/slurm
 
 touch /var/log/slurm/slurm_elastic.log
 touch /var/log/slurm/os_clean.log
