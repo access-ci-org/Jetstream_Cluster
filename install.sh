@@ -34,7 +34,6 @@ yum -y install \
 [ ! -f slurm-key ] && ssh-keygen -b 2048 -t rsa -P "" -f slurm-key
 
 # generate a local key for centos for after homedirs are mounted!
-su centos - -c 'ssh-keygen -t rsa -b 2048 -P "" -f /home/centos/.ssh/id_rsa'
 [ ! -f /home/centos/.ssh/id_rsa ] && su centos - -c 'ssh-keygen -t rsa -b 2048 -P "" -f /home/centos/.ssh/id_rsa && cat /home/centos/.ssh/id_rsa.pub >> /home/centos/.ssh/authorized_keys'
 
 source ./openrc.sh
