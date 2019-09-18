@@ -97,21 +97,22 @@ fi
 centos_base_image=$(openstack image list | grep -iE "API-Featured-centos7-[[:alpha:]]{3,4}-[0-9]{2}-[0-9]{4}" | awk '{print $4}')
 
 echo -e "openstack server create\
-        --user-data prevent-updates.ci \ 
-        --flavor m1.small \ 
-        --image $image_name \ 
-        --key-name $OS_keyname \ 
-        --security-group $OS_USERNAME-global-ssh \ 
-        --security-group $OS_USERNAME-cluster-internal \ 
-        --nic net-id=${OS_USERNAME}-elastic-net ${server_name}"
+        --user-data prevent-updates.ci \
+        --flavor m1.small \
+        --image $image_name \
+        --key-name $OS_keyname \
+        --security-group $OS_USERNAME-global-ssh \
+        --security-group $OS_USERNAME-cluster-internal \
+        --nic net-id=${OS_USERNAME}-elastic-net \
+        ${server_name}"
 
 openstack server create \
         --user-data prevent-updates.ci \
-        --flavor m1.small \ 
-        --image $image_name \ 
-        --key-name $OS_keyname \ 
-        --security-group ${OS_USERNAME}-global-ssh \ 
-        --security-group ${OS_USERNAME}-cluster-internal \ 
+        --flavor m1.small \
+        --image $image_name \
+        --key-name $OS_keyname \
+        --security-group ${OS_USERNAME}-global-ssh \
+        --security-group ${OS_USERNAME}-cluster-internal \
         --nic net-id=${OS_USERNAME}-elastic-net \
         ${server_name}
 
