@@ -159,9 +159,9 @@
       line: "/dev/sda1           /                       xfs     defaults  0 0"
       state: present
  
-#  - name: add local users to compute node
-#    script: /tmp/add_users.sh
-#    ignore_errors: True
+  - name: add local users to compute node
+    script: /tmp/add_users.sh
+    ignore_errors: True
 
   - name: copy munge key from headnode
     synchronize:

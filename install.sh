@@ -201,6 +201,10 @@ echo -e "/opt/ohpc/pub 10.0.0.0/24(rw,no_root_squash)" >> /etc/exports
 centos_base_image=$(openstack image list | grep -iE "API-Featured-centos7-[[:alpha:]]{3,4}-[0-9]{2}-[0-9]{4}" | awk '{print $4}')
 sed -i "s/\(\s*compute_base_image: \).*/\1\"${centos_base_image}\"/" compute_build_base_img.yml | head -n 10
 
+#create temporary script to add local users
+echo "#!/bin/bash" > /tmp/add_users.sh
+cat /etc/passwd | awk -F':' '$4 >= 1001 && $4 < 65000 {print "useradd -M -u", $3, $1}' >> /tmp/add_users.sh
+
 # build instance for compute base image generation, take snapshot, and destroy it
 echo "Creating compute image! based on $centos_base_image"
 
