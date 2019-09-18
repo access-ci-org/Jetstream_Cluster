@@ -16,6 +16,7 @@ if [[ ! -e ${HOME}/.ssh/id_rsa.pub ]]; then
   exit
 fi
 
+server_name=$1
 source ./openrc.sh
 
 # Defining a function here to check for quotas, and exit if this script will cause problems!
@@ -40,6 +41,7 @@ return 1
 }
 
 
+quota_check "secgroups" "security group" 1
 quota_check "networks" "network" 1
 quota_check "subnets" "subnet" 1
 quota_check "routers" "router" 1
@@ -93,16 +95,34 @@ else
 fi
 
 centos_base_image=$(openstack image list | grep -iE "API-Featured-centos7-[[:alpha:]]{3,4}-[0-9]{2}-[0-9]{4}" | awk '{print $4}')
-echo "openstack server create --user-data prevent-updates.ci --flavor m1.small --image $image_name --key-name $OS_keyname --security-group $OS_USERNAME-global-ssh --security-group $OS_USERNAME-cluster-internal --nic net-id=${OS_USERNAME}-elastic-net $1"
-openstack server create --user-data prevent-updates.ci --flavor m1.small --image $image_name --key-name $OS_keyname --security-group ${OS_USERNAME}-global-ssh --security-group ${OS_USERNAME}-cluster-internal --nic net-id=${OS_USERNAME}-elastic-net $1
+
+echo -e "openstack server create\
+        --user-data prevent-updates.ci \ 
+        --flavor m1.small \ 
+        --image $image_name \ 
+        --key-name $OS_keyname \ 
+        --security-group $OS_USERNAME-global-ssh \ 
+        --security-group $OS_USERNAME-cluster-internal \ 
+        --nic net-id=${OS_USERNAME}-elastic-net ${server_name}"
+
+openstack server create \
+        --user-data prevent-updates.ci \
+        --flavor m1.small \ 
+        --image $image_name \ 
+        --key-name $OS_keyname \ 
+        --security-group ${OS_USERNAME}-global-ssh \ 
+        --security-group ${OS_USERNAME}-cluster-internal \ 
+        --nic net-id=${OS_USERNAME}-elastic-net \
+        ${server_name}
+
 public_ip=$(openstack floating ip create public | awk '/floating_ip_address/ {print $4}')
 #For some reason there's a time issue here - adding a sleep command to allow network to become ready
 sleep 10
-openstack server add floating ip $1 $public_ip
+openstack server add floating ip ${server_name} $public_ip
 
 hostname_test=$(ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@$public_ip 'hostname')
 echo "test1: $hostname_test"
-until [[ $hostname_test =~ "$1" ]]; do
+until [[ $hostname_test =~ "${server_name}" ]]; do
   sleep 2
   hostname_test=$(ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@$public_ip 'hostname')
   echo "ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@$public_ip 'hostname'"
