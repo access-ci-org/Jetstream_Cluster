@@ -14,18 +14,18 @@ yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-re
        centos-release-openstack-rocky
 
 yum -y install \
-        ohpc-slurm-server \ 
-        vim \ 
-        ansible \ 
-        mailx \ 
-        lmod-ohpc \ 
-        bash-completion \ 
-        gnu-compilers-ohpc \ 
-        openmpi-gnu-ohpc \ 
+        ohpc-slurm-server \
+        vim \
+        ansible \
+        mailx \
+        lmod-ohpc \
+        bash-completion \
+        gnu-compilers-ohpc \
+        openmpi-gnu-ohpc \
         singularity-ohpc \
-        lmod-defaults-gnu-openmpi-ohpc \ 
-        moreutils \ 
-        bind-utils \ 
+        lmod-defaults-gnu-openmpi-ohpc \
+        moreutils \
+        bind-utils \
         python-openstackclient
 
 #create user that can be used to submit jobs
