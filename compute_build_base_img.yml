@@ -88,25 +88,6 @@
       name: "{{ compute_base_package_list }}" 
       state: present
       lock_timeout: 300
- #    - "quantum-espresso-openmpi"
- #    - "quantum-espresso"
- #     - "rsync"
- #     - "epel-release"
- #     - "openmpi-devel"       #torque
- #     - "gcc"           
- #     - "gcc-c++"       
- #     - "gcc-gfortran"  
- #     - "openssl-devel" 
- #     - "libxml2-devel" 
- #     - "boost-devel"   
- #     - "net-tools"
- #     - "strace"
- #     - "wget"  # needed for building QE
- #     - "readline-devel"  #req for slurm
- #     - "pam-devel"       # req for slurm
- #     - "perl-ExtUtils-MakeMaker" # req for slurm
- #     - "fftw" # req for QE... need a better way to specify these!!!
- #
 
   - name: fix slurm user uid
     user:
