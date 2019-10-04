@@ -94,7 +94,7 @@ else
   OS_keyname=${OS_USERNAME}-elastic-key
 fi
 
-centos_base_image=$(openstack image list | grep -iE "API-Featured-centos7-[[:alpha:]]{3,4}-[0-9]{2}-[0-9]{4}" | awk '{print $4}')
+centos_base_image=$(openstack image list --status active | grep -iE "API-Featured-centos7-[[:alpha:]]{3,4}-[0-9]{2}-[0-9]{4}" | awk '{print $4}' | tail -n 1)
 
 echo -e "openstack server create\
         --user-data prevent-updates.ci \
