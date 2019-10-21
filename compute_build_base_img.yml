@@ -220,10 +220,21 @@
   vars_files:
     - clouds.yaml
 
+  vars_prompt:
+    - name: os_password
+      private: yes
+      unsafe: yes
+      prompt: "Please enter Openstack password:"
+
   tasks:
 
   - name: create compute instance snapshot
-    script: ./compute_take_snapshot.sh
+    expect: 
+      command: ./compute_take_snapshot.sh
+      responses:
+        "Openstack Password":  "{{ os_password }}"
+    no_log: true
+      
 
   - name: remove compute instance
     os_server:
