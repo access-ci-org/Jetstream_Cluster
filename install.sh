@@ -29,7 +29,10 @@ yum -y install \
         lmod-defaults-gnu-openmpi-ohpc \
         moreutils \
         bind-utils \
-        python-openstackclient
+        python2-openstackclient \
+	python2-pexpect
+
+yum -y update  # until the base python2-openstackclient install works out of the box!
 
 #create user that can be used to submit jobs
 [ ! -d /home/gateway-user ] && useradd -m gateway-user
