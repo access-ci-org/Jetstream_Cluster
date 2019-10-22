@@ -227,12 +227,6 @@
   vars_files:
     - clouds.yaml
 
-  vars_prompt:
-    - name: os_password
-      private: yes
-      unsafe: yes
-      prompt: "Please enter Openstack password:"
-
   tasks:
 
   - name: create compute instance snapshot
