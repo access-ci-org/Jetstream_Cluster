@@ -10,6 +10,9 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
+#do this early, allow the user to leave while the rest runs!
+source ./openrc.sh
+
 yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm \
        centos-release-openstack-rocky
 
@@ -26,7 +29,10 @@ yum -y install \
         lmod-defaults-gnu-openmpi-ohpc \
         moreutils \
         bind-utils \
-        python-openstackclient
+        python2-openstackclient \
+	python2-pexpect
+
+yum -y update  # until the base python2-openstackclient install works out of the box!
 
 #create user that can be used to submit jobs
 [ ! -d /home/gateway-user ] && useradd -m gateway-user
@@ -36,7 +42,6 @@ yum -y install \
 # generate a local key for centos for after homedirs are mounted!
 [ ! -f /home/centos/.ssh/id_rsa ] && su centos - -c 'ssh-keygen -t rsa -b 2048 -P "" -f /home/centos/.ssh/id_rsa && cat /home/centos/.ssh/id_rsa.pub >> /home/centos/.ssh/authorized_keys'
 
-source ./openrc.sh
 
 #create clouds.yaml file from contents of openrc
 echo -e "clouds: 
