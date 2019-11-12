@@ -235,7 +235,7 @@
       responses:
         Password:  "{{ clouds.tacc.auth.password }}"
       timeout: null  # Need to check if this refers to the whole command or just the expect part?
-      no_log: true # to avoid putting OS_PASSWORD in logs - uncomment and re-run if you run into errors!
+    no_log: true # to avoid putting OS_PASSWORD in logs - uncomment and re-run if you run into errors!
       
 
   - name: remove compute instance
