@@ -10,14 +10,9 @@ log_loc=/var/log/slurm/slurm_elastic.log
 
 echo "Node resume invoked: $0 $*" >> $log_loc
 
-#useradd won't do anything if the user exists. 
-echo "#!/bin/bash" > /tmp/add_users.sh
-cat /etc/passwd | awk -F':' '$4 >= 1001 && $4 < 65000 {print "useradd -M -u", $3, $1}' >> /tmp/add_users.sh
-
 #First, loop over hosts and run the openstack create commands for *all* resume hosts at once.
 for host in $(scontrol show hostname $1)
 do
-#  echo "$host ansible_user=centos ansible_become=true" >> /etc/ansible/hosts
 
 #  echo "openstack server create $host --flavor $node_size --image $node_image --key-name $key_name --user-data <(cat /etc/slurm/prevent-updates.ci && echo -e "hostname: $host \npreserve_hostname: true\ndebug:") --security-group global-ssh --security-group cluster-internal --nic net-id=$network_name" >> $log_loc
 

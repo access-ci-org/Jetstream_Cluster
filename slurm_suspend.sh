@@ -46,10 +46,7 @@ until [ -z "${hostlist}" -o $count -ge 3 ];
 do
   for host in $hostlist 
   do
-    #remove from /etc/ansible/hosts and /etc/hosts
     if [[ $count == 0 ]]; then
-      sed "/$host/d" /etc/hosts 2>&1 | sponge /etc/hosts >> $log_loc
-      sed "/$host/d" /etc/ansible/hosts 2>&1 | sponge /etc/ansible/hosts >> $log_loc
       scontrol update nodename=${host} nodeaddr="(null)" >> $log_loc
     fi
     destroy_result=$(openstack server delete $host 2>&1) 
