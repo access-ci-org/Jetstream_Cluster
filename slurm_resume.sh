@@ -14,9 +14,7 @@ echo "Node resume invoked: $0 $*" >> $log_loc
 for host in $(scontrol show hostname $1)
 do
 
-#  echo "openstack server create $host --flavor $node_size --image $node_image --key-name $key_name --user-data <(cat /etc/slurm/prevent-updates.ci && echo -e "hostname: $host \npreserve_hostname: true\ndebug:") --security-group global-ssh --security-group cluster-internal --nic net-id=$network_name" >> $log_loc
-
-#Let's spawn a bunch of subtasks!
+#Launch compute nodes and check for new ip address in same subprocess - with 2s delay between Openstack requests
     (echo "creating $host" >> $log_loc;
     openstack server create $host \
     --flavor $node_size \
