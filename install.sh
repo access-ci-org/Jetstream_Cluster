@@ -9,6 +9,7 @@ if [[ $EUID -ne 0 ]]; then
    echo "This script must be run as root"
    exit 1
 fi
+<<<<<<< HEAD
 
 set -e
 set -x
@@ -34,13 +35,41 @@ yum -y install \
 
 #create user that can be used to submit jobs
 [ ! -d /home/user ] && useradd -m user
+=======
+
+#do this early, allow the user to leave while the rest runs!
+source ./openrc.sh
+
+yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm \
+       centos-release-openstack-rocky
+
+yum -y install \
+        ohpc-slurm-server \
+        vim \
+        ansible \
+        mailx \
+        lmod-ohpc \
+        bash-completion \
+        gnu-compilers-ohpc \
+        openmpi-gnu-ohpc \
+        singularity-ohpc \
+        lmod-defaults-gnu-openmpi-ohpc \
+        moreutils \
+        bind-utils \
+        python2-openstackclient \
+	python2-pexpect
+
+yum -y update  # until the base python2-openstackclient install works out of the box!
+
+#create user that can be used to submit jobs
+[ ! -d /home/gateway-user ] && useradd -m gateway-user
+>>>>>>> 7b201c00234ded4ae207a94673916057e7a63d39
 
 [ ! -f slurm-key ] && ssh-keygen -b 2048 -t rsa -P "" -f slurm-key
 
 # generate a local key for centos for after homedirs are mounted!
 [ ! -f /home/centos/.ssh/id_rsa ] && su centos - -c 'ssh-keygen -t rsa -b 2048 -P "" -f /home/centos/.ssh/id_rsa && cat /home/centos/.ssh/id_rsa.pub >> /home/centos/.ssh/authorized_keys'
 
-source ./openrc.sh
 
 cluster_name=$(hostname -s)
 
@@ -54,8 +83,18 @@ echo -e "clouds:
       password: ${OS_PASSWORD}
     cluster_name: $cluster_name
     user_domain_name: ${OS_USER_DOMAIN_NAME}
+<<<<<<< HEAD
     project_domain_id: ${OS_PROJECT_DOMAIN_ID}
+=======
+>>>>>>> 7b201c00234ded4ae207a94673916057e7a63d39
     identity_api_version: 3" > clouds.yaml
+
+# There are different versions of openrc floating around between the js wiki and auto-generated openrc files.
+if [[ -n ${OS_PROJECT_DOMAIN_NAME} ]]; then
+  echo -e "    project_domain_name: ${OS_PROJECT_DOMAIN_NAME}" >> clouds.yaml
+elif [[ -n ${OS_PROJECT_DOMAIN_ID} ]]; then
+  echo -e "    project_domain_id: ${OS_PROJECT_DOMAIN_ID}" >> clouds.yaml
+fi
 
 # Defining a function here to check for quotas, and exit if this script will cause problems!
 # also, storing 'quotas' in a global var, so we're not calling it every single time
@@ -198,9 +237,12 @@ echo -e "/opt/ohpc/pub 10.0.0.0/24(rw,no_root_squash)" >> /etc/exports
 
 #Get latest CentOS7 minimal image for base - if os_image_facts or the os API allowed for wildcards,
 #  this would be different. But this is the world we live in.
-#centos_base_image=$(openstack image list | grep -i js-api-featured-centos7 | grep -vi intel | awk '{print $4}')
-centos_base_image=$(openstack image list | grep -iE "API-Featured-centos7-[[:alpha:]]{3,4}-[0-9]{2}-[0-9]{4}" | awk '{print $4}')
+centos_base_image=$(openstack image list --status active | grep -iE "API-Featured-centos7-[[:alpha:]]{3,4}-[0-9]{2}-[0-9]{4}" | awk '{print $4}' | tail -n 1)
 sed -i "s/\(\s*compute_base_image: \).*/\1\"${centos_base_image}\"/" compute_build_base_img.yml | head -n 10
+
+#create temporary script to add local users
+echo "#!/bin/bash" > /tmp/add_users.sh
+cat /etc/passwd | awk -F':' '$4 >= 1001 && $4 < 65000 {print "useradd -M -u", $3, $1}' >> /tmp/add_users.sh
 
 # build instance for compute base image generation, take snapshot, and destroy it
 echo "Creating compute image! based on $centos_base_image"

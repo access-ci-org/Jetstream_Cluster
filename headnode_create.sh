@@ -17,6 +17,7 @@ if [[ ! -e ${HOME}/.ssh/id_rsa.pub ]]; then
   exit
 fi
 
+server_name=$1
 source ./openrc.sh
 
 # Defining a function here to check for quotas, and exit if this script will cause problems!
@@ -27,6 +28,7 @@ quota_check () {
     type_name=$2 #the name for a quota and the name for the thing itself are not the same
     number_created=$3 #number of the thing that we'll create here.
 
+<<<<<<< HEAD
     echo "checking quota $quota_name"
     current_num=$(openstack $type_name list -f value | wc -l)
 
@@ -39,6 +41,18 @@ quota_check () {
     fi
 
     return 1
+=======
+current_num=$(openstack ${type_name} list -f value | wc -l)
+
+max_types=$(echo "${quotas}" | awk -v quota=${quota_name} '$0 ~ quota {print $4}')
+
+#echo "checking quota for ${quota_name} of ${type_name} to create ${number_created} - want ${current_num} to be less than ${max_types}"
+
+if [[ "${current_num}" -lt "$((max_types + number_created))" ]]; then 
+  return 0
+fi
+return 1
+>>>>>>> 7b201c00234ded4ae207a94673916057e7a63d39
 }
 
 set -x #show use which commands are executed
@@ -64,6 +78,7 @@ if [[ -z "$(openstack router list | grep ${server_name}-elastic-router)" ]]; the
 fi
 
 security_groups=$(openstack security group list -f value)
+<<<<<<< HEAD
 if [[ ! ("$security_groups" =~ "${server_name}-global-ssh") ]]; then
   openstack security group create --description "ssh \& icmp enabled" $server_name-global-ssh
   openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 $server_name-global-ssh
@@ -73,6 +88,17 @@ if [[ ! ("$security_groups" =~ "${server_name}-cluster-internal") ]]; then
   openstack security group create --description "internal group for cluster" $server_name-cluster-internal
   openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/0 $server_name-cluster-internal
   openstack security group rule create --protocol icmp $server_name-cluster-internal
+=======
+if [[ ! ("${security_groups}" =~ "${OS_USERNAME}-global-ssh") ]]; then
+  openstack security group create --description "ssh \& icmp enabled" ${OS_USERNAME}-global-ssh
+  openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 ${OS_USERNAME}-global-ssh
+  openstack security group rule create --protocol icmp ${OS_USERNAME}-global-ssh
+fi
+if [[ ! ("${security_groups}" =~ "${OS_USERNAME}-cluster-internal") ]]; then
+  openstack security group create --description "internal group for cluster" ${OS_USERNAME}-cluster-internal
+  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/0 ${OS_USERNAME}-cluster-internal
+  openstack security group rule create --protocol icmp ${OS_USERNAME}-cluster-internal
+>>>>>>> 7b201c00234ded4ae207a94673916057e7a63d39
 fi
 
 #Check if ${HOME}/.ssh/id_rsa.pub exists in JS
@@ -81,12 +107,21 @@ if [[ -e ${HOME}/.ssh/id_rsa.pub ]]; then
 fi
 openstack_keys=$(openstack keypair list -f value)
 
+<<<<<<< HEAD
 home_key_in_OS=$(echo "$openstack_keys" | awk -v mykey=$home_key_fingerprint '$2 ~ mykey {print $server_name}')
 
 if [[ -n "$home_key_in_OS" ]]; then
   OS_keyname=$home_key_in_OS
 elif [[ -n $(echo "$openstack_keys" | grep ${server_name}-elastic-key) ]]; then
   openstack keypair delete ${server_name}-elastic-key
+=======
+home_key_in_OS=$(echo "${openstack_keys}" | awk -v mykey=${home_key_fingerprint} '$2 ~ mykey {print $1}')
+
+if [[ -n "${home_key_in_OS}" ]]; then
+  OS_keyname=${home_key_in_OS}
+elif [[ -n $(echo "${openstack_keys}" | grep ${OS_USERNAME}-elastic-key) ]]; then
+  openstack keypair delete ${OS_USERNAME}-elastic-key
+>>>>>>> 7b201c00234ded4ae207a94673916057e7a63d39
 # This doesn't need to depend on the OS_PROJECT_NAME, as the slurm-key does, in install.sh and slurm_resume
   openstack keypair create --public-key ${HOME}/.ssh/id_rsa.pub ${server_name}-elastic-key
   OS_keyname=${server_name}-elastic-key
@@ -96,6 +131,7 @@ else
   OS_keyname=${server_name}-elastic-key
 fi
 
+<<<<<<< HEAD
 image_name=$(openstack image list -f value | grep -i JS-API-Featured-Centos7- | grep -vi Intel | cut -f 2 -d' ' | tail -1)
 
 openstack server create \
@@ -107,22 +143,53 @@ openstack server create \
     --security-group ${server_name}-cluster-internal \
     --nic net-id=${server_name}-elastic-net \
     $server_name
+=======
+centos_base_image=$(openstack image list --status active | grep -iE "API-Featured-centos7-[[:alpha:]]{3,4}-[0-9]{2}-[0-9]{4}" | awk '{print $4}' | tail -n 1)
+
+echo -e "openstack server create\
+        --user-data prevent-updates.ci \
+        --flavor m1.small \
+        --image ${centos_base_image} \
+        --key-name ${OS_keyname} \
+        --security-group ${OS_USERNAME}-global-ssh \
+        --security-group ${OS_USERNAME}-cluster-internal \
+        --nic net-id=${OS_USERNAME}-elastic-net \
+        ${server_name}"
+
+openstack server create \
+        --user-data prevent-updates.ci \
+        --flavor m1.small \
+        --image ${centos_base_image} \
+        --key-name ${OS_keyname} \
+        --security-group ${OS_USERNAME}-global-ssh \
+        --security-group ${OS_USERNAME}-cluster-internal \
+        --nic net-id=${OS_USERNAME}-elastic-net \
+        ${server_name}
+>>>>>>> 7b201c00234ded4ae207a94673916057e7a63d39
 
 public_ip=$(openstack floating ip create public | awk '/floating_ip_address/ {print $4}')
 
 #For some reason there's a time issue here - adding a sleep command to allow network to become ready
 sleep 10
+<<<<<<< HEAD
 openstack server add floating ip $server_name $public_ip
 
 hostname_test=$(ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@$public_ip 'hostname')
 echo "test1: $hostname_test"
 until [[ $hostname_test =~ "$server_name" ]]; do
+=======
+openstack server add floating ip ${server_name} ${public_ip}
+
+hostname_test=$(ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@${public_ip} 'hostname')
+echo "test1: ${hostname_test}"
+until [[ ${hostname_test} =~ "${server_name}" ]]; do
+>>>>>>> 7b201c00234ded4ae207a94673916057e7a63d39
   sleep 2
-  hostname_test=$(ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@$public_ip 'hostname')
-  echo "ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@$public_ip 'hostname'"
-  echo "test2: $hostname_test"
+  hostname_test=$(ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@${public_ip} 'hostname')
+  echo "ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@${public_ip} 'hostname'"
+  echo "test2: ${hostname_test}"
 done
 
-scp -qr -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${PWD} centos@$public_ip:
+scp -qr -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${PWD} centos@${public_ip}:
 
-echo "You should be able to login to your server with your Jetstream key: $OS_keyname, at $public_ip"
+echo "You should be able to login to your server with your Jetstream key: ${OS_keyname}, at ${public_ip}"

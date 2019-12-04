@@ -27,6 +27,13 @@
       flavor: "{{ compute_base_size }}"
       meta: { compute: "base" }
       auto_ip: "no"
+      user_data: |
+        #cloud-config
+        packages: []
+        package_update: false
+        package_upgrade: false
+        package_reboot_if_required: false
+        final_message: "Boot completed in $UPTIME seconds"
       network: "{{ network_name }}"
       wait: yes
     register: "os_host"
@@ -82,7 +89,7 @@
     yum:
       name: "https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm"
       state: present
-      lock_timeout: 300
+      lock_timeout: 900
 
   - name: remove environment modules package
     yum:
@@ -95,12 +102,15 @@
       name: "{{ compute_base_package_list }}" 
       state: present
       lock_timeout: 300
+<<<<<<< HEAD
 
   - name: enable hostfs mount on singularity
     replace:
       path: /etc/singularity/singularity.conf
       regexp: "^(mount hostfs = no)$"
       replace: "mount hostfs = yes"
+=======
+>>>>>>> 7b201c00234ded4ae207a94673916057e7a63d39
 
   - name: fix slurm user uid
     user:
@@ -156,9 +166,9 @@
       line: "/dev/sda1           /                       xfs     defaults  0 0"
       state: present
  
-#  - name: add local users to compute node
-#    script: /tmp/add_users.sh
-#    ignore_errors: True
+  - name: add local users to compute node
+    script: /tmp/add_users.sh
+    ignore_errors: True
 
   - name: copy munge key from headnode
     synchronize:
@@ -240,7 +250,17 @@
   tasks:
 
   - name: create compute instance snapshot
+<<<<<<< HEAD
     script: ./compute_take_snapshot.sh "compute-{{ clouds.tacc.cluster_name }}-base-instance"
+=======
+    expect: 
+      command: ./compute_take_snapshot.sh
+      responses:
+        Password:  "{{ clouds.tacc.auth.password }}"
+      timeout: null  # Need to check if this refers to the whole command or just the expect part?
+    no_log: true # to avoid putting OS_PASSWORD in logs - uncomment and re-run if you run into errors!
+      
+>>>>>>> 7b201c00234ded4ae207a94673916057e7a63d39
 
   - name: remove compute instance
     os_server:
