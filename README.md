@@ -31,6 +31,9 @@ To build your own Virtual cluster, starting on your localhost:
    the NodeName and PartitionName line. 
    * If you'd like to change the default node size, the ```node_size=```line 
      in ```slurm_resume.sh``` must be changed.
+     This should take values corresponding to instance sizes in Jetstream, like
+     "m1.small" or "m1.large". Be sure to edit the ```slurm.conf``` file to 
+     reflect the number of CPUs available.
    * If you'd like to enable any specific software, you should edit 
      ```compute_build_base_img.yml```. The task named "install basic packages"
      can be easily extended to install anything available from a yum 
