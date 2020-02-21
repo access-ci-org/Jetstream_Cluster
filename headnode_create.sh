@@ -79,7 +79,7 @@ if [[ -e ${HOME}/.ssh/id_rsa.pub ]]; then
 fi
 openstack_keys=$(openstack keypair list -f value)
 
-home_key_in_OS=$(echo "${openstack_keys}" | awk -v mykey=${home_key_fingerprint} '$2 ~ mykey {print $1}')
+home_key_in_OS=$(echo "${openstack_keys}" | awk -v mykey="${home_key_fingerprint}" '$2 ~ mykey {print $1}')
 
 if [[ -n "${home_key_in_OS}" ]]; then
   OS_keyname=${home_key_in_OS}
