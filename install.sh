@@ -145,9 +145,16 @@ setfacl -m u:slurm:rwx /etc/
 
 chmod +t /etc
 
-#How to generate a working openrc in the cloud-init script for this? Bash vars available?
-# Gonna be tough, since openrc requires a password...
-cp openrc.sh /etc/slurm/
+#Possible to handle this at the cloud-init level? From a machine w/
+# pre-loaded openrc, possible via user-data and write_files, yes.
+echo -e "export OS_PROJECT_DOMAIN_NAME=tacc
+export OS_USER_DOMAIN_NAME=tacc
+export OS_PROJECT_NAME=${OS_PROJECT_NAME}
+export OS_USERNAME=${OS_PROJECT_NAME}
+export OS_PASSWORD=${OS_PASSWORD}
+export OS_AUTH_URL=${OS_AUTH_URL}
+export OS_IDENTITY_API_VERSION=3" > /etc/slurm/openrc.sh
+
 
 chown slurm:slurm /etc/slurm/openrc.sh
 
