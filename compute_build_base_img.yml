@@ -3,12 +3,12 @@
 - hosts: localhost
 
   vars:
-    compute_base_image: "JS-API-Featured-CentOS7-May-20-2019"
-    sec_group_global: "{{ clouds.tacc.auth.username }}-global-ssh"
-    sec_group_internal: "{{ clouds.tacc.auth.username }}-cluster-internal"
+    compute_base_image: "JS-API-Featured-CentOS7-Sep-09-2019"
+    sec_group_global: "{{ clouds.tacc.cluster_name }}-global-ssh"
+    sec_group_internal: "{{ clouds.tacc.cluster_name }}-cluster-internal"
     compute_base_size: "m1.small"
-    network_name: "{{ clouds.tacc.auth.username }}-elastic-net"
-    JS_ssh_keyname: "{{ clouds.tacc.auth.username }}-{{ clouds.tacc.auth.project_name }}-slurm-key"
+    network_name: "{{ clouds.tacc.cluster_name }}-elastic-net"
+    JS_ssh_keyname: "{{ clouds.tacc.cluster_name }}-{{ clouds.tacc.auth.project_name }}-slurm-key"
 
   vars_files:
     - clouds.yaml
@@ -19,7 +19,7 @@
     os_server:
       timeout: 300
       state: present
-      name: "compute-{{ clouds.tacc.auth.username }}-base-instance"
+      name: "compute-{{ clouds.tacc.cluster_name }}-base-instance"
       cloud: "tacc"
       image: "{{ compute_base_image }}"
       key_name: "{{ JS_ssh_keyname }}"
@@ -63,6 +63,13 @@
       - "openmpi-gnu-ohpc"
       - "ohpc-slurm-client"
       - "lmod-ohpc"
+      - "git"
+      - "bind-utils"
+      - "gcc"
+      - "wget"
+      - "jq"
+      - "nodejs"
+      - "singularity"
 
   tasks:
 
@@ -95,6 +102,12 @@
       name: "{{ compute_base_package_list }}" 
       state: present
       lock_timeout: 300
+
+  - name: enable hostfs mount on singularity
+    replace:
+      path: /etc/singularity/singularity.conf
+      regexp: "^(mount hostfs = no)$"
+      replace: "mount hostfs = yes"
 
   - name: fix slurm user uid
     user:
@@ -191,6 +204,10 @@
   - name: enable slurmd
     service: name=slurmd enabled=yes
 
+  - name: create local user called "user"
+    user:
+      name: user
+
 #cat /etc/systemd/system/multi-user.target.wants/slurmd.service
 #[Unit]
 #Description=Slurm node daemon
@@ -230,6 +247,9 @@
   tasks:
 
   - name: create compute instance snapshot
+<<<<<<< HEAD
+    script: ./compute_take_snapshot.sh "compute-{{ clouds.tacc.cluster_name }}-base-instance"
+=======
     expect: 
       command: ./compute_take_snapshot.sh
       responses:
@@ -237,10 +257,13 @@
       timeout: null  # Need to check if this refers to the whole command or just the expect part?
     no_log: true # to avoid putting OS_PASSWORD in logs - uncomment and re-run if you run into errors!
       
+>>>>>>> 7b201c00234ded4ae207a94673916057e7a63d39
 
   - name: remove compute instance
     os_server:
       timeout: 200
       state: absent
-      name: "compute-{{ clouds.tacc.auth.username }}-base-instance"
+      name: "compute-{{ clouds.tacc.cluster_name }}-base-instance"
       cloud: "tacc"
+
+

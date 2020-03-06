@@ -9,6 +9,7 @@ if [[ -z "$1" ]]; then
   echo "NO SERVER NAME GIVEN! Please re-run with ./headnode_create.sh <server-name>"
   exit
 fi
+server_name=$1
 
 if [[ ! -e ${HOME}/.ssh/id_rsa.pub ]]; then
 #This may be temporary... but seems fairly reasonable.
@@ -16,30 +17,30 @@ if [[ ! -e ${HOME}/.ssh/id_rsa.pub ]]; then
   exit
 fi
 
-server_name=$1
 source ./openrc.sh
 
 # Defining a function here to check for quotas, and exit if this script will cause problems!
 # also, storing 'quotas' in a global var, so we're not calling it every single time
 quotas=$(openstack quota show)
-quota_check () 
-{
-quota_name=$1
-type_name=$2 #the name for a quota and the name for the thing itself are not the same
-number_created=$3 #number of the thing that we'll create here.
+quota_check () {
+    quota_name=$1
+    type_name=$2 #the name for a quota and the name for the thing itself are not the same
+    number_created=$3 #number of the thing that we'll create here.
 
-current_num=$(openstack ${type_name} list -f value | wc -l)
+    current_num=$(openstack ${type_name} list -f value | wc -l)
 
-max_types=$(echo "${quotas}" | awk -v quota=${quota_name} '$0 ~ quota {print $4}')
+    max_types=$(echo "${quotas}" | awk -v quota=${quota_name} '$0 ~ quota {print $4}')
 
-#echo "checking quota for ${quota_name} of ${type_name} to create ${number_created} - want ${current_num} to be less than ${max_types}"
+    #echo "checking quota for ${quota_name} of ${type_name} to create ${number_created} - want ${current_num} to be less than ${max_types}"
 
-if [[ "${current_num}" -lt "$((max_types + number_created))" ]]; then 
-  return 0
-fi
-return 1
+    if [[ "${current_num}" -lt "$((max_types + number_created))" ]]; then 
+      return 0
+    fi
+    return 1
 }
 
+set -x #show use which commands are executed
+set -e #terminate as soon as any command fails
 
 quota_check "secgroups" "security group" 1
 quota_check "networks" "network" 1
@@ -49,28 +50,27 @@ quota_check "key-pairs" "keypair" 1
 quota_check "instances" "server" 1
 
 # Ensure that the correct private network/router/subnet exists
-if [[ -z "$(openstack network list | grep ${OS_USERNAME}-elastic-net)" ]]; then
-  openstack network create ${OS_USERNAME}-elastic-net
-  openstack subnet create --network ${OS_USERNAME}-elastic-net --subnet-range 10.0.0.0/24 ${OS_USERNAME}-elastic-subnet1
+if [[ -z "$(openstack network list | grep ${server_name}-elastic-net)" ]]; then
+  openstack network create ${server_name}-elastic-net
+  openstack subnet create --network ${server_name}-elastic-net --subnet-range 10.0.0.0/24 ${server_name}-elastic-subnet1
 fi
 ##openstack subnet list
-if [[ -z "$(openstack router list | grep ${OS_USERNAME}-elastic-router)" ]]; then
-  openstack router create ${OS_USERNAME}-elastic-router
-  openstack router add subnet ${OS_USERNAME}-elastic-router ${OS_USERNAME}-elastic-subnet1
-  openstack router set --external-gateway public ${OS_USERNAME}-elastic-router
+if [[ -z "$(openstack router list | grep ${server_name}-elastic-router)" ]]; then
+  openstack router create ${server_name}-elastic-router
+  openstack router add subnet ${server_name}-elastic-router ${server_name}-elastic-subnet1
+  openstack router set --external-gateway public ${server_name}-elastic-router
 fi
-#openstack router show ${OS_USERNAME}-api-router
 
 security_groups=$(openstack security group list -f value)
-if [[ ! ("${security_groups}" =~ "${OS_USERNAME}-global-ssh") ]]; then
-  openstack security group create --description "ssh \& icmp enabled" ${OS_USERNAME}-global-ssh
-  openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 ${OS_USERNAME}-global-ssh
-  openstack security group rule create --protocol icmp ${OS_USERNAME}-global-ssh
+if [[ ! ("$security_groups" =~ "${server_name}-global-ssh") ]]; then
+  openstack security group create --description "ssh \& icmp enabled" $server_name-global-ssh
+  openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 $server_name-global-ssh
+  openstack security group rule create --protocol icmp $server_name-global-ssh
 fi
-if [[ ! ("${security_groups}" =~ "${OS_USERNAME}-cluster-internal") ]]; then
-  openstack security group create --description "internal group for cluster" ${OS_USERNAME}-cluster-internal
-  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/0 ${OS_USERNAME}-cluster-internal
-  openstack security group rule create --protocol icmp ${OS_USERNAME}-cluster-internal
+if [[ ! ("$security_groups" =~ "${server_name}-cluster-internal") ]]; then
+  openstack security group create --description "internal group for cluster" $server_name-cluster-internal
+  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/0 $server_name-cluster-internal
+  openstack security group rule create --protocol icmp $server_name-cluster-internal
 fi
 
 #Check if ${HOME}/.ssh/id_rsa.pub exists in JS
@@ -83,28 +83,14 @@ home_key_in_OS=$(echo "${openstack_keys}" | awk -v mykey="${home_key_fingerprint
 
 if [[ -n "${home_key_in_OS}" ]]; then
   OS_keyname=${home_key_in_OS}
-elif [[ -n $(echo "${openstack_keys}" | grep ${OS_USERNAME}-elastic-key) ]]; then
-  openstack keypair delete ${OS_USERNAME}-elastic-key
+elif [[ -n $(echo "${openstack_keys}" | grep ${server_name}-elastic-key) ]]; then
+  openstack keypair delete ${server_name}-elastic-key
 # This doesn't need to depend on the OS_PROJECT_NAME, as the slurm-key does, in install.sh and slurm_resume
-  openstack keypair create --public-key ${HOME}/.ssh/id_rsa.pub ${OS_USERNAME}-elastic-key
-  OS_keyname=${OS_USERNAME}-elastic-key
-else
-# This doesn't need to depend on the OS_PROJECT_NAME, as the slurm-key does, in install.sh and slurm_resume
-  openstack keypair create --public-key ${HOME}/.ssh/id_rsa.pub ${OS_USERNAME}-elastic-key
-  OS_keyname=${OS_USERNAME}-elastic-key
+  openstack keypair create --public-key ${HOME}/.ssh/id_rsa.pub ${server_name}-elastic-key
+  OS_keyname=${server_name}-elastic-key
 fi
 
 centos_base_image=$(openstack image list --status active | grep -iE "API-Featured-centos7-[[:alpha:]]{3,4}-[0-9]{2}-[0-9]{4}" | awk '{print $4}' | tail -n 1)
-
-echo -e "openstack server create\
-        --user-data prevent-updates.ci \
-        --flavor m1.small \
-        --image ${centos_base_image} \
-        --key-name ${OS_keyname} \
-        --security-group ${OS_USERNAME}-global-ssh \
-        --security-group ${OS_USERNAME}-cluster-internal \
-        --nic net-id=${OS_USERNAME}-elastic-net \
-        ${server_name}"
 
 openstack server create \
         --user-data prevent-updates.ci \
@@ -117,6 +103,7 @@ openstack server create \
         ${server_name}
 
 public_ip=$(openstack floating ip create public | awk '/floating_ip_address/ {print $4}')
+
 #For some reason there's a time issue here - adding a sleep command to allow network to become ready
 sleep 10
 openstack server add floating ip ${server_name} ${public_ip}
