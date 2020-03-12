@@ -150,7 +150,7 @@ chmod +t /etc
 echo -e "export OS_PROJECT_DOMAIN_NAME=tacc
 export OS_USER_DOMAIN_NAME=tacc
 export OS_PROJECT_NAME=${OS_PROJECT_NAME}
-export OS_USERNAME=${OS_PROJECT_NAME}
+export OS_USERNAME=${OS_USERNAME}
 export OS_PASSWORD=${OS_PASSWORD}
 export OS_AUTH_URL=${OS_AUTH_URL}
 export OS_IDENTITY_API_VERSION=3" > /etc/slurm/openrc.sh
