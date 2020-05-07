@@ -3,7 +3,7 @@
 - hosts: localhost
 
   vars:
-    compute_base_image: "JS-API-Featured-CentOS7-May-20-2019"
+    compute_base_image: "JS-API-Featured-CentOS7-Latest"
     sec_group_global: "{{ clouds.tacc.auth.username }}-global-ssh"
     sec_group_internal: "{{ clouds.tacc.auth.username }}-cluster-internal"
     compute_base_size: "m1.small"
