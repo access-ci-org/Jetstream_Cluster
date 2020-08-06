@@ -91,3 +91,5 @@ scontrol update nodename=compute-[?] state=idle
 
 or to re-run the suspend/resume scripts as above (if the instance
 power state doesn't match the current state as seen by slurm).
+
+This work supported by [![NSF-1548562](https://img.shields.io/badge/NSF-1548562-blue.svg)](https://nsf.gov/awardsearch/showAward?AWD_ID=1548562)
