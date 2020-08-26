@@ -95,7 +95,7 @@ else
 fi
 
 #centos_base_image=$(openstack image list --status active | grep -iE "API-Featured-centos7-[[:alpha:]]{3,4}-[0-9]{2}-[0-9]{4}" | awk '{print $4}' | tail -n 1)
-centos_base_image="JS-API-Featured-CentOS7-Latest"
+centos_base_image="JS-API-Featured-CentOS8-Latest"
 
 echo -e "openstack server create\
         --user-data prevent-updates.ci \

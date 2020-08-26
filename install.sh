@@ -13,10 +13,10 @@ fi
 #do this early, allow the user to leave while the rest runs!
 source ./openrc.sh
 
-yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm \
+dnf -y install http://repos.openhpc.community/OpenHPC/2/CentOS_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm \
        centos-release-openstack-rocky
 
-yum -y install \
+dnf -y install \
         ohpc-slurm-server \
         vim \
         ansible \
@@ -32,7 +32,7 @@ yum -y install \
         python2-openstackclient \
 	python2-pexpect
 
-yum -y update  # until the base python2-openstackclient install works out of the box!
+dnf -y update  # until the base python2-openstackclient install works out of the box!
 
 #create user that can be used to submit jobs
 [ ! -d /home/gateway-user ] && useradd -m gateway-user
