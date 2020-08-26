@@ -140,4 +140,4 @@ done
 
 scp -qr -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${PWD} centos@${public_ip}:
 
-echo "You should be able to login to your server with your Jetstream key: ${OS_keyname}, at ${public_ip}"
+echo "You should be able to login to your server with your Jetstream key: ${OS_KEYPAIR_NAME}, at ${public_ip}"
