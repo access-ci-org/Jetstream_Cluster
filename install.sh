@@ -14,7 +14,7 @@ fi
 source ./openrc.sh
 
 dnf -y install http://repos.openhpc.community/OpenHPC/2/CentOS_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm \
-       centos-release-openstack-rocky
+       centos-release-openstack-train
 
 dnf -y install \
         ohpc-slurm-server \
@@ -23,14 +23,14 @@ dnf -y install \
         mailx \
         lmod-ohpc \
         bash-completion \
-        gnu-compilers-ohpc \
-        openmpi-gnu-ohpc \
+        gnu9-compilers-ohpc \
+        openmpi4-gnu9-ohpc \
         singularity-ohpc \
-        lmod-defaults-gnu-openmpi-ohpc \
+        lmod-defaults-gnu9-openmpi4-ohpc \
         moreutils \
         bind-utils \
-        python2-openstackclient \
-	python2-pexpect
+        python3-openstackclient \
+ 	python3-pexpect
 
 dnf -y update  # until the base python2-openstackclient install works out of the box!
 
@@ -227,7 +227,7 @@ ansible-playbook -v --ssh-common-args='-o StrictHostKeyChecking=no' compute_buil
 rm -r /tmp/.ansible
 
 #Start required services
-systemctl enable slurmctld munge nfs-server nfs-lock nfs rpcbind nfs-idmap
-systemctl start munge slurmctld nfs-server nfs-lock nfs rpcbind nfs-idmap
+systemctl enable slurmctld munge nfs-server rpcbind 
+systemctl start munge slurmctld nfs-server rpcbind 
 
 echo -e "If you wish to enable an email when node state is drain or down, please uncomment \nthe cron-node-check.sh job in /etc/crontab, and place your email of choice in the 'email_addr' variable \nat the beginning of /usr/local/sbin/cron-node-check.sh"
