@@ -4,7 +4,8 @@ source /etc/slurm/openrc.sh
 
 node_size="m1.small"
 # See compute_take_snapshot.sh for naming convention; backup snapshots exist with date appended
-node_image=$(openstack image list -f value | grep -i $(hostname -s)-compute-image-latest | cut -f 2 -d' '| tail -n 1)
+#node_image=$(openstack image list -f value | grep -i $(hostname -s)-compute-image-latest | cut -f 2 -d' '| tail -n 1)
+node_image=$(hostname -s)-compute-image-latest
 log_loc=/var/log/slurm/slurm_elastic.log
 
 OS_PREFIX=${OS_USERNAME}
