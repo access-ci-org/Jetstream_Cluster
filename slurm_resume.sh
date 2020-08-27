@@ -3,9 +3,8 @@
 source /etc/slurm/openrc.sh
 
 node_size="m1.small"
-node_image=$(openstack image list -f value | grep -i ${OS_USERNAME}-compute-image- | cut -f 2 -d' '| tail -n 1)
-key_name="${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key"
-network_name=${OS_USERNAME}-elastic-net
+# See compute_take_snapshot.sh for naming convention; backup snapshots exist with date appended
+node_image=$(openstack image list -f value | grep -i $(hostname -s)-compute-image-latest | cut -f 2 -d' '| tail -n 1)
 log_loc=/var/log/slurm/slurm_elastic.log
 
 #def f'n to generate a write_files entry for cloud-config for copying over a file

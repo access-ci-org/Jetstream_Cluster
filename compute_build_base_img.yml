@@ -15,11 +15,12 @@
 
   tasks:
 
+#      name: "compute-{{ clouds.tacc.auth.username }}-base-instance"
   - name: build compute base instance 
     os_server:
       timeout: 300
       state: present
-      name: "compute-{{ clouds.tacc.auth.username }}-base-instance"
+      name: "compute-{{ inventory_hostname_short }}-base-instance"
       cloud: "tacc"
       image: "{{ compute_base_image }}"
       key_name: "{{ JS_ssh_keyname }}"
@@ -245,5 +246,5 @@
     os_server:
       timeout: 200
       state: absent
-      name: "compute-{{ clouds.tacc.auth.username }}-base-instance"
+      name: "compute-{{ ansible_hostname_short }}-base-instance"
       cloud: "tacc"
