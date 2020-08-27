@@ -49,6 +49,7 @@ quota_check "key-pairs" "keypair" 1
 quota_check "instances" "server" 1
 
 #To more easily avoid collisions with multiple VC's on a single alloc
+# These exist in slurm_resume.sh as well; maybe should set via there sed or an include file...
 OS_PREFIX=${OS_USERNAME}
 OS_NETWORK_NAME=${OS_PREFIX}-elastic-net
 OS_SUBNET_NAME=${OS_PREFIX}-elastic-subnet
@@ -58,7 +59,7 @@ OS_INTERNAL_SECGROUP_NAME=${OS_PREFIX}-internal
 OS_KEYPAIR_NAME=${OS_USERNAME}-elastic-key
 
 # Ensure that the correct private network/router/subnet exists
-if [[ -z "$(openstack network list | grep ${OS_USERNAME}-elastic-net)" ]]; then
+if [[ -z "$(openstack network list | grep ${OS_NETWORK_NAME})" ]]; then
   openstack network create ${OS_NETWORK_NAME}
   openstack subnet create --network ${OS_NETWORK_NAME} --subnet-range 10.0.0.0/24 ${OS_SUBNET_NAME}
 fi
