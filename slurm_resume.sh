@@ -9,6 +9,7 @@ node_image=$(hostname -s)-compute-image-latest
 log_loc=/var/log/slurm/slurm_elastic.log
 
 OS_PREFIX=${OS_USERNAME}
+OS_SLURM_KEYPAIR=${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key
 OS_NETWORK_NAME=${OS_PREFIX}-elastic-net
 OS_SSH_SECGROUP_NAME=${OS_PREFIX}-ssh-global
 OS_INTERNAL_SECGROUP_NAME=${OS_PREFIX}-internal
@@ -44,7 +45,7 @@ do
     openstack server create $host \
     --flavor $node_size \
     --image $node_image \
-    --key-name ${OS_KEYPAIR_NAME} \
+    --key-name ${OS_SLURM_KEYPAIR} \
     --user-data <(echo -e "${user_data_long}") \
     --security-group ${OS_SSH_SECGROUP_NAME} --security-group ${OS_INTERNAL_SECGROUP_NAME} \
     --nic net-id=${OS_NETWORK_NAME} 2>&1 \
