@@ -8,8 +8,8 @@ node_size="m1.small"
 node_image=$(hostname -s)-compute-image-latest
 log_loc=/var/log/slurm/slurm_elastic.log
 
-OS_PREFIX=${OS_USERNAME}
-OS_SLURM_KEYPAIR=${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key
+OS_PREFIX=$(hostname -s)
+OS_SLURM_KEYPAIR=${OS_PREFIX}-slurm-key
 OS_NETWORK_NAME=${OS_PREFIX}-elastic-net
 OS_SSH_SECGROUP_NAME=${OS_PREFIX}-ssh-global
 OS_INTERNAL_SECGROUP_NAME=${OS_PREFIX}-internal
