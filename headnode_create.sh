@@ -50,7 +50,7 @@ quota_check "instances" "server" 1
 
 #To more easily avoid collisions with multiple VC's on a single alloc
 # These exist in slurm_resume.sh as well; maybe should set via there sed or an include file...
-OS_PREFIX=${OS_USERNAME}
+OS_PREFIX=${server_name}
 OS_NETWORK_NAME=${OS_PREFIX}-elastic-net
 OS_SUBNET_NAME=${OS_PREFIX}-elastic-subnet
 OS_ROUTER_NAME=${OS_PREFIX}-elastic-router
@@ -64,7 +64,7 @@ if [[ -z "$(openstack network list | grep ${OS_NETWORK_NAME})" ]]; then
   openstack subnet create --network ${OS_NETWORK_NAME} --subnet-range 10.0.0.0/24 ${OS_SUBNET_NAME}
 fi
 ##openstack subnet list
-if [[ -z "$(openstack router list | grep ${OS_USERNAME}-elastic-router)" ]]; then
+if [[ -z "$(openstack router list | grep ${OS_ROUTER_NAME})" ]]; then
   openstack router create ${OS_ROUTER_NAME}
   openstack router add subnet ${OS_ROUTER_NAME} ${OS_SUBNET_NAME}
   openstack router set --external-gateway public ${OS_ROUTER_NAME}
