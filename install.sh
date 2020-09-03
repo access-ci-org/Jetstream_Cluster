@@ -12,6 +12,8 @@ fi
 
 #do this early, allow the user to leave while the rest runs!
 source ./openrc.sh
+OS_PREFIX=$(hostname -s)
+OS_SLURM_KEYPAIR=${OS_PREFIX}-slurm-key
 
 #Open the firewall on the internal network for Cent8
 firewall-cmd --permanent --add-rich-rule="rule source address='10.0.0.0/24' family='ipv4' accept"
@@ -99,11 +101,11 @@ fi
 
 #quota_check "instances" "server" 1
 
-if [[ -n $(openstack keypair list | grep ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key) ]]; then
-  openstack keypair delete ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key
-  openstack keypair create --public-key slurm-key.pub ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key
+if [[ -n $(openstack keypair list | grep ${OS_SLURM_KEYPAIR}) ]]; then
+  openstack keypair delete ${OS_SLURM_KEYPAIR}
+  openstack keypair create --public-key slurm-key.pub ${OS_SLURM_KEYPAIR}
 else
-  openstack keypair create --public-key slurm-key.pub ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key
+  openstack keypair create --public-key slurm-key.pub ${OS_SLURM_KEYPAIR}
 fi
 
 #make sure security groups exist... this could cause issues.
@@ -160,7 +162,6 @@ export OS_USERNAME=${OS_USERNAME}
 export OS_PASSWORD=${OS_PASSWORD}
 export OS_AUTH_URL=${OS_AUTH_URL}
 export OS_IDENTITY_API_VERSION=3" > /etc/slurm/openrc.sh
-
 
 chown slurm:slurm /etc/slurm/openrc.sh
 
