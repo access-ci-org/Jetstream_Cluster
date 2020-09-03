@@ -4,11 +4,11 @@
 
   vars:
     compute_base_image: "JS-API-Featured-CentOS8-Latest"
-    sec_group_global: "{{ clouds.tacc.auth.username }}-global-ssh"
-    sec_group_internal: "{{ clouds.tacc.auth.username }}-cluster-internal"
+    sec_group_global: "{{ ansible_facts.hostname }}-ssh-global"
+    sec_group_internal: "{{ ansible_facts.hostname }}-internal"
     compute_base_size: "m1.small"
-    network_name: "{{ clouds.tacc.auth.username }}-elastic-net"
-    JS_ssh_keyname: "{{ clouds.tacc.auth.username }}-{{ clouds.tacc.auth.project_name }}-slurm-key"
+    network_name: "{{ ansible_facts.hostname }}-elastic-net"
+    JS_ssh_keyname: "{{ ansible_facts.hostname }}-slurm-key"
 
   vars_files:
     - clouds.yaml
