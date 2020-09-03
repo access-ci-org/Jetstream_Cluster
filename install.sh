@@ -90,14 +90,15 @@ fi
 return 1
 }
 
-#quota_check "key-pairs" "keypair" 1
-security_groups=$(openstack security group list -f value)
-if [[ $(quota_check "secgroups" "security group" 2) ]]; then
-  if [[ ! ("$security_groups" =~ "global-ssh") && ("$security_groups" =~ "cluster-internal") ]]; then
-    echo "NOT ENOUGH SECURITY GROUPS REMAINING IN YOUR ALLOCATION! EITHER ASK FOR A QUOTA INCREASE, OR REMOVE SOME SECURITY GROUPS"
-    exit
-  fi
-fi
+##quota_check "key-pairs" "keypair" 1
+# Creating security groups is done via headnode_create.sh
+#security_groups=$(openstack security group list -f value)
+#if [[ $(quota_check "secgroups" "security group" 2) ]]; then
+#  if [[ ! ("$security_groups" =~ "global-ssh") && ("$security_groups" =~ "internal") ]]; then
+#    echo "NOT ENOUGH SECURITY GROUPS REMAINING IN YOUR ALLOCATION! EITHER ASK FOR A QUOTA INCREASE, OR REMOVE SOME SECURITY GROUPS"
+#    exit
+#  fi
+#fi
 
 #quota_check "instances" "server" 1
 
@@ -109,17 +110,18 @@ else
 fi
 
 #make sure security groups exist... this could cause issues.
-if [[ ! ("$security_groups" =~ "global-ssh") ]]; then
-  openstack security group create --description "ssh \& icmp enabled" ${OS_USERNAME}-global-ssh
-  openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 ${OS_USERNAME}-global-ssh
-  openstack security group rule create --protocol icmp ${OS_USERNAME}-global-ssh
-fi
-if [[ ! ("$security_groups" =~ "cluster-internal") ]]; then
-  openstack security group create --description "internal 10.0.0.0/24 network allowed" ${OS_USERNAME}-cluster-internal
-  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/24 ${OS_USERNAME}-cluster-internal
-  openstack security group rule create --protocol udp --dst-port 1:65535 --remote-ip 10.0.0.0/24 ${OS_USERNAME}-cluster-internal
-  openstack security group rule create --protocol icmp ${OS_USERNAME}-cluster-internal
-fi
+# Pretty sure this exists in headnode_create - testing removal.
+#if [[ ! ("$security_groups" =~ "global-ssh") ]]; then
+#  openstack security group create --description "ssh \& icmp enabled" ${OS_USERNAME}-global-ssh
+#  openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 ${OS_USERNAME}-global-ssh
+#  openstack security group rule create --protocol icmp ${OS_USERNAME}-global-ssh
+#fi
+#if [[ ! ("$security_groups" =~ "cluster-internal") ]]; then
+#  openstack security group create --description "internal 10.0.0.0/24 network allowed" ${OS_USERNAME}-cluster-internal
+#  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/24 ${OS_USERNAME}-cluster-internal
+#  openstack security group rule create --protocol udp --dst-port 1:65535 --remote-ip 10.0.0.0/24 ${OS_USERNAME}-cluster-internal
+#  openstack security group rule create --protocol icmp ${OS_USERNAME}-cluster-internal
+#fi
 
 #TACC-specific changes:
 
