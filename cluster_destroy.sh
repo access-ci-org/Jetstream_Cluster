@@ -20,8 +20,6 @@ openstack server delete ${headnode_name}
 
 openstack floating ip delete ${headnode_ip}
 
-sleep 5 # seems like there are issues with the network deleting correctly 
-
 #There's only one of each thing floating around, potentially some compute instances that weren't cleaned up and some images... SO!
 OS_PREFIX=${headnode_name}
 OS_SSH_SECGROUP_NAME=${OS_PREFIX}-ssh-global
@@ -31,31 +29,31 @@ OS_ROUTER_NAME=${OS_PREFIX}-elastic-router
 OS_SUBNET_NAME=${OS_PREFIX}-elastic-subnet
 OS_NETWORK_NAME=${OS_PREFIX}-elastic-net
 
+compute_nodes=$(openstack server list -f value -c Name | grep ${headnode_name}-compute )
+if [[ -n "${compute_nodes}" ]]; then
+for node in "${compute_nodes}"
+do
+	echo "Deleting compute node: ${node}"
+  openstack server delete ${node}
+done
+fi
+
+sleep 5 # seems like there are issues with the network deleting correctly 
 
 openstack security group delete ${OS_SSH_SECGROUP_NAME}
 openstack security group delete ${OS_INTERNAL_SECGROUP_NAME}
 openstack keypair delete ${OS_SLURM_KEYPAIR} # We don't delete the elastic-key, since it could be a user's key used for other stuff
-openstack router unset --external gateway ${OS_ROUTER_NAME}
+openstack router unset --external-gateway ${OS_ROUTER_NAME}
 openstack router remove subnet ${OS_ROUTER_NAME} ${OS_SUBNET_NAME}
 openstack router delete ${OS_ROUTER_NAME}
 openstack subnet delete ${OS_SUBNET_NAME}
 openstack network delete ${OS_NETWORK_NAME}
 
 
-echo "PLEASE RUN THE FOLLOWING AFTER REVIEWING FOR CORRECTNESS:"
-#To avoid namespace collusions where we're only grepping for a name...
-# We could also use a regex like ${headnode_name}-compute-[0-9]{2}-[0-9]{2}-[0-9]{4}, thanks to the date convention
-# but for now, we'll do the Human-in-The-Loop thing
-headnode_images=$(openstack image list --private -f value -c Name | grep ${headnode_name})
+headnode_images=$(openstack image list --private -f value -c Name | grep ${headnode_name}-compute-image- )
 for image in "${headnode_images}"
 do
-  echo "openstack image delete ${image}"
-done
-
-compute_nodes=$(openstack server list -f value -c Name | grep ${headnode_name})
-for node in "${compute_nodes}"
-do
-  echo "openstack server delete ${node}"
+  openstack image delete ${image}
 done
 
 ##os_components=("server" "volume" "router" "subnet" "network" "keypair" "security group")
