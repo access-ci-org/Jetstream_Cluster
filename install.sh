@@ -136,8 +136,8 @@ fi
 #sed -i "s/network_name=.*/network_name=$headnode_os_subnet/" ./slurm_resume.sh
 
 #Set compute node names to $OS_USERNAME-compute-
-sed -i "s/=compute-*/=${OS_USERNAME}-compute-/" ./slurm.conf
-sed -i "s/Host compute-*/Host ${OS_USERNAME}-compute-/" ./ssh.cfg
+sed -i "s/=compute-*/=${OS_PREFIX}-compute-/" ./slurm.conf
+sed -i "s/Host compute-*/Host ${OS_PREFIX}-compute-/" ./ssh.cfg
 
 # Deal with files required by slurm - better way to encapsulate this section?
 
