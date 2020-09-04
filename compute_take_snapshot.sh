@@ -49,6 +49,6 @@ then
 fi
 
 echo "Done after ${count} sleeps."
-#openstack image show ${compute_image}
+
 openstack image list | grep $(hostname -s)
-#openstack image show ${backup_image_name}
+openstack server delete ${compute_instance}
