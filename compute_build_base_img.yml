@@ -246,10 +246,10 @@
       timeout: null  # Need to check if this refers to the whole command or just the expect part?
     no_log: true # to avoid putting OS_PASSWORD in logs - uncomment and re-run if you run into errors!
       
-
-  - name: remove compute instance
-    os_server:
-      timeout: 200
-      state: absent
-      name: "compute-{{ inventory_hostname_short }}-base-instance"
-      cloud: "tacc"
+# os_server no longer handles instance state correctly
+#  - name: remove compute instance
+#    os_server:
+#      timeout: 200
+#      state: absent
+#      name: "compute-{{ inventory_hostname_short }}-base-instance"
+#      cloud: "tacc"
