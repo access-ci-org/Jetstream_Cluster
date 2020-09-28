@@ -69,7 +69,7 @@ if [[ ! ("${security_groups}" =~ "${OS_USERNAME}-global-ssh") ]]; then
 fi
 if [[ ! ("${security_groups}" =~ "${OS_USERNAME}-cluster-internal") ]]; then
   openstack security group create --description "internal group for cluster" ${OS_USERNAME}-cluster-internal
-  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/0 ${OS_USERNAME}-cluster-internal
+  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/24 ${OS_USERNAME}-cluster-internal
   openstack security group rule create --protocol icmp ${OS_USERNAME}-cluster-internal
 fi
 
