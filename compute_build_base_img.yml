@@ -4,11 +4,11 @@
 
   vars:
     compute_base_image: "JS-API-Featured-CentOS7-Latest"
-    sec_group_global: "{{ clouds.tacc.auth.username }}-global-ssh"
-    sec_group_internal: "{{ clouds.tacc.auth.username }}-cluster-internal"
+    sec_group_global: "{{ clouds.jetstream.auth.username }}-global-ssh"
+    sec_group_internal: "{{ clouds.jetstream.auth.username }}-cluster-internal"
     compute_base_size: "m1.small"
-    network_name: "{{ clouds.tacc.auth.username }}-elastic-net"
-    JS_ssh_keyname: "{{ clouds.tacc.auth.username }}-{{ clouds.tacc.auth.project_name }}-slurm-key"
+    network_name: "{{ clouds.jetstream.auth.username }}-elastic-net"
+    JS_ssh_keyname: "{{ clouds.jetstream.auth.username }}-{{ clouds.jetstream.auth.project_name }}-slurm-key"
 
   vars_files:
     - clouds.yaml
@@ -19,8 +19,8 @@
     os_server:
       timeout: 300
       state: present
-      name: "compute-{{ clouds.tacc.auth.username }}-base-instance"
-      cloud: "tacc"
+      name: "compute-{{ clouds.jetstream.auth.username }}-base-instance"
+      cloud: "jetstream"
       image: "{{ compute_base_image }}"
       key_name: "{{ JS_ssh_keyname }}"
       security_groups: "{{ sec_group_global }},{{ sec_group_internal }}"
@@ -233,7 +233,7 @@
     expect: 
       command: ./compute_take_snapshot.sh
       responses:
-        Password:  "{{ clouds.tacc.auth.password }}"
+        Password:  "{{ clouds.jetstream.auth.password }}"
       timeout: null  # Need to check if this refers to the whole command or just the expect part?
     no_log: true # to avoid putting OS_PASSWORD in logs - uncomment and re-run if you run into errors!
       
@@ -242,5 +242,5 @@
     os_server:
       timeout: 200
       state: absent
-      name: "compute-{{ clouds.tacc.auth.username }}-base-instance"
-      cloud: "tacc"
+      name: "compute-{{ clouds.jetstream.auth.username }}-base-instance"
+      cloud: "jetstream"

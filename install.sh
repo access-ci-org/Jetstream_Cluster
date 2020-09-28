@@ -45,13 +45,14 @@ yum -y update  # until the base python2-openstackclient install works out of the
 
 #create clouds.yaml file from contents of openrc
 echo -e "clouds: 
-  tacc:
+  jetstream:
     auth:
       username: ${OS_USERNAME}
       auth_url: ${OS_AUTH_URL}
       project_name: ${OS_PROJECT_NAME}
       password: ${OS_PASSWORD}
     user_domain_name: ${OS_USER_DOMAIN_NAME}
+    project_domain_name: ${OS_PROJECT_DOMAIN_NAME}
     identity_api_version: 3" > clouds.yaml
 
 # There are different versions of openrc floating around between the js wiki and auto-generated openrc files.
@@ -147,8 +148,8 @@ chmod +t /etc
 
 #Possible to handle this at the cloud-init level? From a machine w/
 # pre-loaded openrc, possible via user-data and write_files, yes.
-echo -e "export OS_PROJECT_DOMAIN_NAME=tacc
-export OS_USER_DOMAIN_NAME=tacc
+echo -e "export OS_PROJECT_DOMAIN_NAME=${OS_PROJECT_DOMAIN_NAME}
+export OS_USER_DOMAIN_NAME=${OS_USER_DOMAIN_NAME}
 export OS_PROJECT_NAME=${OS_PROJECT_NAME}
 export OS_USERNAME=${OS_USERNAME}
 export OS_PASSWORD=${OS_PASSWORD}
