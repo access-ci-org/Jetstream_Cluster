@@ -52,13 +52,20 @@ do
     | tee -a $log_loc | awk '/status/ {print $4}' >> $log_loc 2>&1;
 
   node_status="UNKOWN";
-  until [[ $node_status == "ACTIVE" ]]; do
+  stat_count=0
+  declare -i stat_count;
+  until [[ $node_status == "ACTIVE" || $stat_count -ge 20 ]]; do
     node_state=$(openstack server show $host 2>&1);
     node_status=$(echo -e "${node_state}" | awk '/status/ {print $4}');
 #    echo "$host status is: $node_status" >> $log_loc;
 #    echo "$host ip is: $node_ip" >> $log_loc;
+    stat_count+=1
     sleep 3;
   done;
+  if [[ $node_status != "ACTIVE" ]]; then
+     echo "$host creation failed" >> $log_loc;
+     exit 1;
+  fi;
   node_ip=$(echo -e "${node_state}" | awk '/addresses/ {print gensub(/^.*=/,"","g",$4)}');
 
   echo "$host ip is $node_ip" >> $log_loc;
