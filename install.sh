@@ -12,6 +12,9 @@ fi
 
 #do this early, allow the user to leave while the rest runs!
 source ./openrc.sh
+OS_PREFIX=$(hostname -s)
+OS_SLURM_KEYPAIR=${OS_PREFIX}-slurm-key
+OS_APP_CRED=${OS_PREFIX}-slurm-app-cred
 
 yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm \
        centos-release-openstack-rocky
@@ -62,56 +65,11 @@ elif [[ -n ${OS_PROJECT_DOMAIN_ID} ]]; then
   echo -e "    project_domain_id: ${OS_PROJECT_DOMAIN_ID}" >> clouds.yaml
 fi
 
-# Defining a function here to check for quotas, and exit if this script will cause problems!
-# also, storing 'quotas' in a global var, so we're not calling it every single time
-quotas=$(openstack quota show)
-quota_check () 
-{
-quota_name=$1
-type_name=$2 #the name for a quota and the name for the thing itself are not the same
-number_created=$3 #number of the thing that we'll create here.
-
-current_num=$(openstack $type_name list -f value | wc -l)
-
-max_types=$(echo "$quotas" | awk -v quota=$quota_name '$0 ~ quota {print $4}')
-
-#echo "checking quota for $quota_name of $type_name to create $number_created - want $current_num to be less than $max_types"
-
-if [[ "$current_num" -lt "$((max_types + number_created))" ]]; then 
-  return 0
-fi
-return 1
-}
-
-#quota_check "key-pairs" "keypair" 1
-security_groups=$(openstack security group list -f value)
-if [[ $(quota_check "secgroups" "security group" 2) ]]; then
-  if [[ ! ("$security_groups" =~ "global-ssh") && ("$security_groups" =~ "cluster-internal") ]]; then
-    echo "NOT ENOUGH SECURITY GROUPS REMAINING IN YOUR ALLOCATION! EITHER ASK FOR A QUOTA INCREASE, OR REMOVE SOME SECURITY GROUPS"
-    exit
-  fi
-fi
-
-#quota_check "instances" "server" 1
-
-if [[ -n $(openstack keypair list | grep ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key) ]]; then
-  openstack keypair delete ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key
-  openstack keypair create --public-key slurm-key.pub ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key
+if [[ -n $(openstack keypair list | grep ${OS_SLURM_KEYPAIR}) ]]; then
+  openstack keypair delete ${OS_SLURM_KEYPAIR}
+  openstack keypair create --public-key slurm-key.pub ${OS_SLURM_KEYPAIR}
 else
-  openstack keypair create --public-key slurm-key.pub ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key
-fi
-
-#make sure security groups exist... this could cause issues.
-if [[ ! ("$security_groups" =~ "global-ssh") ]]; then
-  openstack security group create --description "ssh \& icmp enabled" ${OS_USERNAME}-global-ssh
-  openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 ${OS_USERNAME}-global-ssh
-  openstack security group rule create --protocol icmp ${OS_USERNAME}-global-ssh
-fi
-if [[ ! ("$security_groups" =~ "cluster-internal") ]]; then
-  openstack security group create --description "internal 10.0.0.0/24 network allowed" ${OS_USERNAME}-cluster-internal
-  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/24 ${OS_USERNAME}-cluster-internal
-  openstack security group rule create --protocol udp --dst-port 1:65535 --remote-ip 10.0.0.0/24 ${OS_USERNAME}-cluster-internal
-  openstack security group rule create --protocol icmp ${OS_USERNAME}-cluster-internal
+  openstack keypair create --public-key slurm-key.pub ${OS_SLURM_KEYPAIR}
 fi
 
 #TACC-specific changes:
@@ -127,8 +85,8 @@ fi
 #sed -i "s/network_name=.*/network_name=$headnode_os_subnet/" ./slurm_resume.sh
 
 #Set compute node names to $OS_USERNAME-compute-
-sed -i "s/=compute-*/=${OS_USERNAME}-compute-/" ./slurm.conf
-sed -i "s/Host compute-*/Host ${OS_USERNAME}-compute-/" ./ssh.cfg
+sed -i "s/=compute-*/=${OS_PREFIX}-compute-/" ./slurm.conf
+sed -i "s/Host compute-*/Host ${OS_PREFIX}-compute-/" ./ssh.cfg
 
 # Deal with files required by slurm - better way to encapsulate this section?
 

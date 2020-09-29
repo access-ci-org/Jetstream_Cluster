@@ -2,8 +2,9 @@
 
 source openrc.sh
 
-compute_image="${OS_USERNAME}-compute-image-$(date +%m-%d-%Y)"
-compute_instance="compute-${OS_USERNAME}-base-instance"
+#compute_image="${OS_USERNAME}-compute-image-$(date +%m-%d-%Y)"
+compute_image="$(hostname -s)-compute-image-latest"
+compute_instance="compute-$(hostname -s)-base-instance"
 
 openstack server stop $compute_instance
 
@@ -17,9 +18,18 @@ do
 done
 
 image_check=$(openstack image show -f value -c name $compute_image)
+# If there is already a -latest image, re-name it with the date of its creation
 if [[ -n $image_check ]];
 then
-  openstack image delete $compute_image
+  old_image_date=$(openstack image show ${compute_image} -f value -c created_at | cut -d'T' -f 1)
+  backup_image_name=${compute_image::-7}-${old_image_date}
+
+  if [[ ${old_image_date} == "$(date +%Y-%m-%d)" && -n "$(openstack image show -f value -c name ${backup_image_name})" ]];
+  then
+    openstack image delete ${backup_image_name}
+  fi
+
+  openstack image set --name ${backup_image_name} ${compute_image}
 fi
 
 openstack server image create --name $compute_image $compute_instance
@@ -40,4 +50,6 @@ then
 fi
 
 echo "Done after $count sleeps."
-openstack image show $compute_image
+
+openstack image list | grep $(hostname -s)
+openstack server delete ${compute_instance}
