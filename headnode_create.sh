@@ -48,6 +48,8 @@ quota_check "routers" "router" 1
 quota_check "key-pairs" "keypair" 1
 quota_check "instances" "server" 1
 
+#These must match those defined in install.sh, slurm_resume.sh, compute_build_base_img.yml
+#  and compute_take_snapshot.sh, which ASSUME the server_name convention has not been deviated from.
 OS_PREFIX=${server_name}
 OS_NETWORK_NAME=${OS_PREFIX}-elastic-net
 OS_SUBNET_NAME=${OS_PREFIX}-elastic-subnet
@@ -56,11 +58,18 @@ OS_SSH_SECGROUP_NAME=${OS_PREFIX}-ssh-global
 OS_INTERNAL_SECGROUP_NAME=${OS_PREFIX}-internal
 OS_KEYPAIR_NAME=${OS_USERNAME}-elastic-key
 
+# This will allow for customization of the 1st 24 bits of the subnet range
+# The last 8 will be assumed open (netmask 255.255.255.0 or /24) 
+# because going beyond that requires a general mechanism for translation from CIDR
+# to wildcard notation for ssh.cfg and compute_build_base_img.yml
+# which is assumed to be beyond the scope of this project. 
+#  If there is a maintainable mechanism for this, of course, please let us know!
+SUBNET_PREFIX=10.0.0
 
 # Ensure that the correct private network/router/subnet exists
 if [[ -z "$(openstack network list | grep ${OS_NETWORK_NAME})" ]]; then
   openstack network create ${OS_NETWORK_NAME}
-  openstack subnet create --network ${OS_NETWORK_NAME} --subnet-range 10.0.0.0/24 ${OS_SUBNET_NAME}
+  openstack subnet create --network ${OS_NETWORK_NAME} --subnet-range ${SUBNET_PREFIX}.0/24 ${OS_SUBNET_NAME}
 fi
 ##openstack subnet list
 if [[ -z "$(openstack router list | grep ${OS_ROUTER_NAME})" ]]; then
@@ -78,7 +87,7 @@ if [[ ! ("${security_groups}" =~ "${OS_SSH_SECGROUP_NAME}") ]]; then
 fi
 if [[ ! ("${security_groups}" =~ "${OS_INTERNAL_SECGROUP_NAME}") ]]; then
   openstack security group create --description "internal group for cluster" ${OS_INTERNAL_SECGROUP_NAME}
-  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/24 ${OS_INTERNAL_SECGROUP_NAME}
+  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip ${SUBNET_PREFIX}.0/24 ${OS_INTERNAL_SECGROUP_NAME}
   openstack security group rule create --protocol icmp ${OS_INTERNAL_SECGROUP_NAME}
 fi
 

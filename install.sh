@@ -11,10 +11,12 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 #do this early, allow the user to leave while the rest runs!
+#These must match those defined in headnode_create.sh
 source ./openrc.sh
 OS_PREFIX=$(hostname -s)
 OS_SLURM_KEYPAIR=${OS_PREFIX}-slurm-key
 OS_APP_CRED=${OS_PREFIX}-slurm-app-cred
+SUBNET_PREFIX=10.0.0
 
 yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm \
        centos-release-openstack-rocky
@@ -87,6 +89,10 @@ fi
 #Set compute node names to $OS_USERNAME-compute-
 sed -i "s/=compute-*/=${OS_PREFIX}-compute-/" ./slurm.conf
 sed -i "s/Host compute-*/Host ${OS_PREFIX}-compute-/" ./ssh.cfg
+
+#set the subnet in ssh.cfg and compute_build_base_img.yml
+sed -i "s/Host 10.0.0.\*/Host ${SUBNET_PREFIX}.\*/" ./ssh.cfg
+sed -i "s/^\(.*\)10.0.0\(.*\)$/\1${SUBNET_PREFIX}\2/" ./compute_build_base_img.yml
 
 # Deal with files required by slurm - better way to encapsulate this section?
 
@@ -162,8 +168,8 @@ cp slurm_test.job ${HOME}
 mkdir -m 777 -p /export
 
 #create export of homedirs and /export and /opt/ohpc/pub
-echo -e "/home 10.0.0.0/24(rw,no_root_squash) \n/export 10.0.0.0/24(rw,no_root_squash)" > /etc/exports
-echo -e "/opt/ohpc/pub 10.0.0.0/24(rw,no_root_squash)" >> /etc/exports
+echo -e "/home ${SUBNET_PREFIX}.0/24(rw,no_root_squash) \n/export ${SUBNET_PREFIX}.0/24(rw,no_root_squash)" > /etc/exports
+echo -e "/opt/ohpc/pub ${SUBNET_PREFIX}.0/24(rw,no_root_squash)" >> /etc/exports
 
 #Get latest CentOS7 minimal image for base - if os_image_facts or the os API allowed for wildcards,
 #  this would be different. But this is the world we live in.
