@@ -14,10 +14,13 @@ fi
 source ./openrc.sh
 OS_PREFIX=$(hostname -s)
 OS_SLURM_KEYPAIR=${OS_PREFIX}-slurm-key
+OS_APP_CRED=${OS_PREFIX}-slurm-app-cred
+
+SUBNET_PREFIX=10.0.0
 
 #Open the firewall on the internal network for Cent8
-firewall-cmd --permanent --add-rich-rule="rule source address='10.0.0.0/24' family='ipv4' accept"
-firewall-cmd --add-rich-rule="rule source address='10.0.0.0/24' family='ipv4' accept"
+firewall-cmd --permanent --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
+firewall-cmd --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
 
 dnf -y install http://repos.openhpc.community/OpenHPC/2/CentOS_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm \
        centos-release-openstack-train
@@ -88,9 +91,13 @@ fi
 #headnode_os_subnet=$(openstack server show $(hostname | cut -f 1 -d'.') | awk '/addresses/ {print $4}' | cut -f 1 -d'=')
 #sed -i "s/network_name=.*/network_name=$headnode_os_subnet/" ./slurm_resume.sh
 
-#Set compute node names to $OS_USERNAME-compute-
+#Set compute node names to $OS_PREFIX-compute-
 sed -i "s/=compute-*/=${OS_PREFIX}-compute-/" ./slurm.conf
 sed -i "s/Host compute-*/Host ${OS_PREFIX}-compute-/" ./ssh.cfg
+
+#set the subnet in ssh.cfg and compute_build_base_img.yml
+sed -i "s/Host 10.0.0.\*/Host ${SUBNET_PREFIX}.\*/" ./ssh.cfg
+sed -i "s/^\(.*\)10.0.0\(.*\)$/\1${SUBNET_PREFIX}\2/" ./compute_build_base_img.yml
 
 # Deal with files required by slurm - better way to encapsulate this section?
 
@@ -110,6 +117,16 @@ chmod +t /etc
 
 #Possible to handle this at the cloud-init level? From a machine w/
 # pre-loaded openrc, possible via user-data and write_files, yes.
+# This needs a check for success, and if not, fail?
+#export $(openstack application credential create -f shell ${OS_APP_CRED} | sed 's/^\(.*\)/OS_ac_\1/')
+#echo -e "export OS_AUTH_TYPE=v3applicationcredential
+#export OS_AUTH_URL=${OS_AUTH_URL}
+#export OS_IDENTITY_API_VERSION=3
+#export OS_REGION_NAME="RegionOne"
+#export OS_INTERFACE=public
+#export OS_APPLICATION_CREDENTIAL_ID=${OS_ac_id}
+#export OS_APPLICATION_CREDENTIAL_SECRET=${OS_ac_secret} > /etc/slurm/openrc.sh
+
 echo -e "export OS_PROJECT_DOMAIN_NAME=tacc
 export OS_USER_DOMAIN_NAME=tacc
 export OS_PROJECT_NAME=${OS_PROJECT_NAME}
@@ -165,8 +182,8 @@ cp slurm_test.job ${HOME}
 mkdir -m 777 -p /export
 
 #create export of homedirs and /export and /opt/ohpc/pub
-echo -e "/home 10.0.0.0/24(rw,no_root_squash) \n/export 10.0.0.0/24(rw,no_root_squash)" > /etc/exports
-echo -e "/opt/ohpc/pub 10.0.0.0/24(rw,no_root_squash)" >> /etc/exports
+echo -e "/home ${SUBNET_PREFIX}.0/24(rw,no_root_squash) \n/export ${SUBNET_PREFIX}.0/24(rw,no_root_squash)" > /etc/exports
+echo -e "/opt/ohpc/pub ${SUBNET_PREFIX}.0/24(rw,no_root_squash)" >> /etc/exports
 
 #Get latest CentOS7 minimal image for base - if os_image_facts or the os API allowed for wildcards,
 #  this would be different. But this is the world we live in.
