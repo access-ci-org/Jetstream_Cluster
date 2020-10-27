@@ -211,6 +211,6 @@ rm -r /tmp/.ansible
 
 #Start required services
 systemctl enable slurmctld munge nfs-server rpcbind 
-systemctl start munge slurmctld nfs-server rpcbind 
+systemctl restart munge slurmctld nfs-server rpcbind 
 
 echo -e "If you wish to enable an email when node state is drain or down, please uncomment \nthe cron-node-check.sh job in /etc/crontab, and place your email of choice in the 'email_addr' variable \nat the beginning of /usr/local/sbin/cron-node-check.sh"
