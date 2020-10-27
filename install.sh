@@ -99,6 +99,10 @@ sed -i "s/Host compute-*/Host ${OS_PREFIX}-compute-/" ./ssh.cfg
 sed -i "s/Host 10.0.0.\*/Host ${SUBNET_PREFIX}.\*/" ./ssh.cfg
 sed -i "s/^\(.*\)10.0.0\(.*\)$/\1${SUBNET_PREFIX}\2/" ./compute_build_base_img.yml
 
+#set the subnet in ssh.cfg and compute_build_base_img.yml
+sed -i "s/Host 10.0.0.\*/Host ${SUBNET_PREFIX}.\*/" ./ssh.cfg
+sed -i "s/^\(.*\)10.0.0\(.*\)$/\1${SUBNET_PREFIX}\2/" ./compute_build_base_img.yml
+
 # Deal with files required by slurm - better way to encapsulate this section?
 
 mkdir -p -m 700 /etc/slurm/.ssh
