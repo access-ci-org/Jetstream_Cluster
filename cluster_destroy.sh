@@ -28,6 +28,7 @@ OS_SLURM_KEYPAIR=${OS_PREFIX}-slurm-key
 OS_ROUTER_NAME=${OS_PREFIX}-elastic-router
 OS_SUBNET_NAME=${OS_PREFIX}-elastic-subnet
 OS_NETWORK_NAME=${OS_PREFIX}-elastic-net
+OS_APP_CRED=${OS_PREFIX}-slurm-app-cred
 
 compute_nodes=$(openstack server list -f value -c Name | grep ${headnode_name}-compute )
 if [[ -n "${compute_nodes}" ]]; then
@@ -56,24 +57,4 @@ do
   openstack image delete ${image}
 done
 
-##os_components=("server" "volume" "router" "subnet" "network" "keypair" "security group")
-#os_components=("server" "router" "subnet" "network")
-#for i in `seq 0 $((${#os_components[*]} - 1))`; do # I apologize.
-#  echo "Removing ${os_components[$i]} for ${headnode_name}:"
-#  openstack ${os_components[$i]} list -f value -c Name | grep -E ""
-#  particulars=$(openstack ${os_components[$i]} list -f value -c ID -c Name | grep -E "${OS_USERNAME}-elastic" | cut -f 1 -d' ' | tr '\n' ' ') # this should grab head and computes
-#  if [[ ${os_components[$i]} =~ "server" ]]; then
-#    echo "Removing headnode: $headnode_name"
-#    openstack server delete $headnode_name
-#  fi
-#  for thing in ${particulars}; do
-#    if [[ ${os_components[$i]} =~ "router" ]]; then
-#      openstack router unset --external-gateway ${thing}
-#      subnet_id=$(openstack router show ${thing} -c interfaces_info -f value | sed 's/\[{"subnet_id": "\([a-zA-Z0-9-]*\)".*/\1/')
-#      openstack router remove subnet ${thing} ${subnet_id}
-#      openstack router delete ${thing}
-#    else
-#       openstack ${os_components[$i]} delete ${thing}
-#    fi
-#  done
-#done
+openstack application credential delete ${OS_APP_CRED}
