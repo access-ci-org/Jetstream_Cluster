@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ ! -e ./openrc.sh ]]; then
+if [[ ! -e /etc/slurm/openrc.sh ]]; then
   echo "NO OPENRC FOUND! CREATE ONE, AND TRY AGAIN!"
   exit 1
 fi
@@ -11,10 +11,10 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 #do this early, allow the user to leave while the rest runs!
-source ./openrc.sh
+source /etc/slurm/openrc.sh
+
 OS_PREFIX=$(hostname -s)
 OS_SLURM_KEYPAIR=${OS_PREFIX}-slurm-key
-OS_APP_CRED=${OS_PREFIX}-slurm-app-cred
 
 SUBNET_PREFIX=10.0.0
 
@@ -55,22 +55,19 @@ dnf -y update  # until the base python2-openstackclient install works out of the
 
 
 #create clouds.yaml file from contents of openrc
-echo -e "clouds: 
+echo -e "clouds:
   tacc:
     auth:
-      username: ${OS_USERNAME}
-      auth_url: ${OS_AUTH_URL}
-      project_name: ${OS_PROJECT_NAME}
-      password: ${OS_PASSWORD}
-    user_domain_name: ${OS_USER_DOMAIN_NAME}
-    identity_api_version: 3" > clouds.yaml
+      auth_url: https://jblb.jetstream-cloud.org:35357/v3
+      application_credential_id: '${OS_APPLICATION_CREDENTIAL_ID}'
+      application_credential_secret: '${OS_APPLICATION_CREDENTIAL_SECRET}'
+    user_domain_name: tacc
+    identity_api_version: 3
+    project_domain_name: tacc
+    auth_type: 'v3applicationcredential'" > clouds.yaml
 
-# There are different versions of openrc floating around between the js wiki and auto-generated openrc files.
-if [[ -n ${OS_PROJECT_DOMAIN_NAME} ]]; then
-  echo -e "    project_domain_name: ${OS_PROJECT_DOMAIN_NAME}" >> clouds.yaml
-elif [[ -n ${OS_PROJECT_DOMAIN_ID} ]]; then
-  echo -e "    project_domain_id: ${OS_PROJECT_DOMAIN_ID}" >> clouds.yaml
-fi
+#Make sure only root can read this
+chmod 400 clouds.yaml
 
 if [[ -n $(openstack keypair list | grep ${OS_SLURM_KEYPAIR}) ]]; then
   openstack keypair delete ${OS_SLURM_KEYPAIR}
@@ -99,10 +96,6 @@ sed -i "s/Host compute-*/Host ${OS_PREFIX}-compute-/" ./ssh.cfg
 sed -i "s/Host 10.0.0.\*/Host ${SUBNET_PREFIX}.\*/" ./ssh.cfg
 sed -i "s/^\(.*\)10.0.0\(.*\)$/\1${SUBNET_PREFIX}\2/" ./compute_build_base_img.yml
 
-#set the subnet in ssh.cfg and compute_build_base_img.yml
-sed -i "s/Host 10.0.0.\*/Host ${SUBNET_PREFIX}.\*/" ./ssh.cfg
-sed -i "s/^\(.*\)10.0.0\(.*\)$/\1${SUBNET_PREFIX}\2/" ./compute_build_base_img.yml
-
 # Deal with files required by slurm - better way to encapsulate this section?
 
 mkdir -p -m 700 /etc/slurm/.ssh
@@ -119,32 +112,34 @@ setfacl -m u:slurm:rwx /etc/
 
 chmod +t /etc
 
-#Possible to handle this at the cloud-init level? From a machine w/
-# pre-loaded openrc, possible via user-data and write_files, yes.
-# This needs a check for success, and if not, fail?
-#export $(openstack application credential create -f shell ${OS_APP_CRED} | sed 's/^\(.*\)/OS_ac_\1/')
-#echo -e "export OS_AUTH_TYPE=v3applicationcredential
+#The following may be removed when appcred gen during cluster_create is working
+##Possible to handle this at the cloud-init level? From a machine w/
+## pre-loaded openrc, possible via user-data and write_files, yes.
+## This needs a check for success, and if not, fail?
+##export $(openstack application credential create -f shell ${OS_APP_CRED} | sed 's/^\(.*\)/OS_ac_\1/')
+##echo -e "export OS_AUTH_TYPE=v3applicationcredential
+##export OS_AUTH_URL=${OS_AUTH_URL}
+##export OS_IDENTITY_API_VERSION=3
+##export OS_REGION_NAME="RegionOne"
+##export OS_INTERFACE=public
+##export OS_APPLICATION_CREDENTIAL_ID=${OS_ac_id}
+##export OS_APPLICATION_CREDENTIAL_SECRET=${OS_ac_secret} > /etc/slurm/openrc.sh
+#
+#echo -e "export OS_PROJECT_DOMAIN_NAME=tacc
+#export OS_USER_DOMAIN_NAME=tacc
+#export OS_PROJECT_NAME=${OS_PROJECT_NAME}
+#export OS_USERNAME=${OS_USERNAME}
+#export OS_PASSWORD=${OS_PASSWORD}
 #export OS_AUTH_URL=${OS_AUTH_URL}
-#export OS_IDENTITY_API_VERSION=3
-#export OS_REGION_NAME="RegionOne"
-#export OS_INTERFACE=public
-#export OS_APPLICATION_CREDENTIAL_ID=${OS_ac_id}
-#export OS_APPLICATION_CREDENTIAL_SECRET=${OS_ac_secret} > /etc/slurm/openrc.sh
+#export OS_IDENTITY_API_VERSION=3" > /etc/slurm/openrc.sh
 
-echo -e "export OS_PROJECT_DOMAIN_NAME=tacc
-export OS_USER_DOMAIN_NAME=tacc
-export OS_PROJECT_NAME=${OS_PROJECT_NAME}
-export OS_USERNAME=${OS_USERNAME}
-export OS_PASSWORD=${OS_PASSWORD}
-export OS_AUTH_URL=${OS_AUTH_URL}
-export OS_IDENTITY_API_VERSION=3" > /etc/slurm/openrc.sh
+#chown slurm:slurm /etc/slurm/openrc.sh
 
-chown slurm:slurm /etc/slurm/openrc.sh
-
-chmod 400 /etc/slurm/openrc.sh
+#chmod 400 /etc/slurm/openrc.sh
 
 cp prevent-updates.ci /etc/slurm/
 
+chown slurm:slurm /etc/slurm/openrc.sh
 chown slurm:slurm /etc/slurm/prevent-updates.ci
 
 mkdir -p /var/log/slurm

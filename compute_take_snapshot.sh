@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source openrc.sh
+source /etc/slurm/openrc.sh
 
 compute_image="$(hostname -s)-compute-image-latest"
 compute_instance="compute-$(hostname -s)-base-instance"

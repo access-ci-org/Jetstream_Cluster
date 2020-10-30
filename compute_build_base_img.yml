@@ -240,7 +240,7 @@
   tasks:
 
   - name: create compute instance snapshot
-      command: ./compute_take_snapshot.sh
+    command: ./compute_take_snapshot.sh
       
 # os_server no longer handles instance state correctly
 #  - name: remove compute instance
