@@ -44,28 +44,26 @@ To build your own Virtual cluster, starting on your localhost:
      (or ensure that they're available in the shared filesystem).
    * For other modifications, feel free to get in touch!
 
-1. Run ```headnode_create.sh``` - it *will* require an ssh key to exist in
+1. Run ```cluster_create.sh``` - it *will* require an ssh key to exist in
    ```${HOME}/.ssh/id_rsa.pub```. This will be the key used for your jetstream
    instance! If you prefer to use a different key, be sure to edit this
    script accordingly. The expected argument is only the headnode name, 
    and will create an 'm1.small' instance for you.
 
-   ```./headnode_create.sh <headnode-name>```
+   ```./cluster_create.sh <headnode-name>```
 
    Watch for the ip address of your new instance at the end of the script!
-1. The headnode_create script has copied everything in this directory 
+1. The cluster_create script has copied everything in this directory  
+   except your openrc file
    to your headnode. You should now be able to ssh in
    as the centos user, with your default ssh key: 
    
    ```ssh centos@<new-headnode-ip>```
 
-1. Now, in the copied directory, *on the headnode*, run the install.sh script
-   with sudo:
+1. Slurm should be up and running, all that's left is to install any 
+   desired software. If you are using Singularity, just load the module 
+   and point to your preferred repo!
    
-   ```sudo ./install.sh```. 
-   
-   This script handles all the steps necessary to install slurm, with
-   elastic nodes set. 
 
 Useage note:
 Slurm will run the suspend/resume scripts in response to 
