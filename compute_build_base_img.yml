@@ -20,7 +20,7 @@
       timeout: 300
       state: present
       name: "compute-{{ ansible_facts.hostname }}-base-instance"
-      cloud: "jetstream"
+      cloud: "tacc"
       image: "{{ compute_base_image }}"
       key_name: "{{ JS_ssh_keyname }}"
       security_groups: "{{ sec_group_global }},{{ sec_group_internal }}"
@@ -230,12 +230,7 @@
   tasks:
 
   - name: create compute instance snapshot
-    expect: 
-      command: ./compute_take_snapshot.sh
-      responses:
-        Password:  "{{ clouds.jetstream.auth.password }}"
-      timeout: null  # Need to check if this refers to the whole command or just the expect part?
-    no_log: true # to avoid putting OS_PASSWORD in logs - uncomment and re-run if you run into errors!
+    command: ./compute_take_snapshot.sh
       
 
 # can no longer trust os_server to remove instances when already in suspended state

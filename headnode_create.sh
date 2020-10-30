@@ -57,6 +57,7 @@ OS_ROUTER_NAME=${OS_PREFIX}-elastic-router
 OS_SSH_SECGROUP_NAME=${OS_PREFIX}-ssh-global
 OS_INTERNAL_SECGROUP_NAME=${OS_PREFIX}-internal
 OS_KEYPAIR_NAME=${OS_USERNAME}-elastic-key
+OS_APP_CRED=${OS_PREFIX}-slurm-app-cred
 
 # This will allow for customization of the 1st 24 bits of the subnet range
 # The last 8 will be assumed open (netmask 255.255.255.0 or /24) 
@@ -77,7 +78,6 @@ if [[ -z "$(openstack router list | grep ${OS_ROUTER_NAME})" ]]; then
   openstack router add subnet ${OS_ROUTER_NAME} ${OS_SUBNET_NAME}
   openstack router set --external-gateway public ${OS_ROUTER_NAME}
 fi
-#openstack router show ${OS_ROUTER_NAME}
 
 security_groups=$(openstack security group list -f value)
 if [[ ! ("${security_groups}" =~ "${OS_SSH_SECGROUP_NAME}") ]]; then
@@ -100,6 +100,7 @@ openstack_keys=$(openstack keypair list -f value)
 home_key_in_OS=$(echo "${openstack_keys}" | awk -v mykey="${home_key_fingerprint}" '$2 ~ mykey {print $1}')
 
 if [[ -n "${home_key_in_OS}" ]]; then
+	#RESET this to key that's already in OS
   OS_KEYPAIR_NAME=${home_key_in_OS}
 elif [[ -n $(echo "${openstack_keys}" | grep ${OS_KEYPAIR_NAME}) ]]; then
   openstack keypair delete ${OS_KEYPAIR_NAME}
@@ -113,8 +114,35 @@ fi
 #centos_base_image=$(openstack image list --status active | grep -iE "API-Featured-centos7-[[:alpha:]]{3,4}-[0-9]{2}-[0-9]{4}" | awk '{print $4}' | tail -n 1)
 centos_base_image="JS-API-Featured-CentOS7-Latest"
 
+#Now, generate an Openstack Application Credential for use on the cluster
+export $(openstack application credential create -f shell ${OS_APP_CRED} | sed 's/^\(.*\)/OS_ac_\1/')
+
+#Write it to a temporary file
+echo -e "export OS_AUTH_TYPE=v3applicationcredential
+export OS_AUTH_URL=${OS_AUTH_URL}
+export OS_IDENTITY_API_VERSION=3
+export OS_REGION_NAME="RegionOne"
+export OS_INTERFACE=public
+export OS_APPLICATION_CREDENTIAL_ID=${OS_ac_id}
+export OS_APPLICATION_CREDENTIAL_SECRET=${OS_ac_secret}" > ./openrc-app.sh
+
+#Function to generate file: sections for cloud-init config files
+# arguments are owner path permissions file_to_be_copied
+# All calls to this must come after an "echo "write_files:\n"
+generate_write_files () {
+#This is generating YAML, so... spaces are important.
+echo -e "  - encoding: b64\n    owner: $1\n    path: $2\n    permissions: $3\n    content: |\n$(cat $4 | base64 | sed 's/^/      /')"
+}
+
+user_data="$(cat ./prevent-updates.ci)\n"
+user_data+="$(echo -e "write_files:")\n"
+user_data+="$(generate_write_files "slurm" "/etc/slurm/openrc.sh" "0400" "./openrc-app.sh")\n"
+
+#Clean up!
+rm ./openrc-app.sh
+
 echo -e "openstack server create\
-        --user-data prevent-updates.ci \
+        --user-data <(echo -e "${user_data}") \
         --flavor m1.small \
         --image ${centos_base_image} \
         --key-name ${OS_KEYPAIR_NAME} \
@@ -124,7 +152,7 @@ echo -e "openstack server create\
         ${server_name}"
 
 openstack server create \
-        --user-data prevent-updates.ci \
+        --user-data <(echo -e "${user_data}") \
         --flavor m1.small \
         --image ${centos_base_image} \
         --key-name ${OS_KEYPAIR_NAME} \
@@ -147,6 +175,11 @@ until [[ ${hostname_test} =~ "${server_name}" ]]; do
   echo "test2: ${hostname_test}"
 done
 
-scp -qr -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${PWD} centos@${public_ip}:
+rsync -qa --exclude="openrc.sh" -e 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no' ${PWD} centos@${public_ip}:
 
-echo "You should be able to login to your server with your Jetstream key: ${OS_keyname}, at ${public_ip}"
+echo "Copied over VC files, beginning Slurm installation and Compute Image configuration - should take 8-10 minutes."
+
+#Since PWD on localhost has the full path, we only want the current directory name
+ssh centos@${public_ip} "cd ./${PWD##*/} && sudo ./install.sh"
+
+echo "You should be able to login to your server with your Jetstream key: ${OS_KEYPAIR_NAME}, at ${public_ip}"

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ ! -e ./openrc.sh ]]; then
+if [[ ! -e /etc/slurm/openrc.sh ]]; then
   echo "NO OPENRC FOUND! CREATE ONE, AND TRY AGAIN!"
   exit 1
 fi
@@ -12,10 +12,10 @@ fi
 
 #do this early, allow the user to leave while the rest runs!
 #These must match those defined in headnode_create.sh
-source ./openrc.sh
+source /etc/slurm/openrc.sh
 OS_PREFIX=$(hostname -s)
 OS_SLURM_KEYPAIR=${OS_PREFIX}-slurm-key
-OS_APP_CRED=${OS_PREFIX}-slurm-app-cred
+
 SUBNET_PREFIX=10.0.0
 
 yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm \
@@ -49,23 +49,19 @@ yum -y update  # until the base python2-openstackclient install works out of the
 
 
 #create clouds.yaml file from contents of openrc
-echo -e "clouds: 
-  jetstream:
+echo -e "clouds:
+  tacc:
     auth:
-      username: ${OS_USERNAME}
-      auth_url: ${OS_AUTH_URL}
-      project_name: ${OS_PROJECT_NAME}
-      password: ${OS_PASSWORD}
-    user_domain_name: ${OS_USER_DOMAIN_NAME}
-    project_domain_name: ${OS_PROJECT_DOMAIN_NAME}
-    identity_api_version: 3" > clouds.yaml
+      auth_url: https://jblb.jetstream-cloud.org:35357/v3
+      application_credential_id: '${OS_APPLICATION_CREDENTIAL_ID}'
+      application_credential_secret: '${OS_APPLICATION_CREDENTIAL_SECRET}'
+    user_domain_name: tacc
+    identity_api_version: 3
+    project_domain_name: tacc
+    auth_type: 'v3applicationcredential'" > clouds.yaml
 
-# There are different versions of openrc floating around between the js wiki and auto-generated openrc files.
-if [[ -n ${OS_PROJECT_DOMAIN_NAME} ]]; then
-  echo -e "    project_domain_name: ${OS_PROJECT_DOMAIN_NAME}" >> clouds.yaml
-elif [[ -n ${OS_PROJECT_DOMAIN_ID} ]]; then
-  echo -e "    project_domain_id: ${OS_PROJECT_DOMAIN_ID}" >> clouds.yaml
-fi
+#Make sure only root can read this
+chmod 400 clouds.yaml
 
 if [[ -n $(openstack keypair list | grep ${OS_SLURM_KEYPAIR}) ]]; then
   openstack keypair delete ${OS_SLURM_KEYPAIR}
@@ -86,7 +82,7 @@ fi
 #headnode_os_subnet=$(openstack server show $(hostname | cut -f 1 -d'.') | awk '/addresses/ {print $4}' | cut -f 1 -d'=')
 #sed -i "s/network_name=.*/network_name=$headnode_os_subnet/" ./slurm_resume.sh
 
-#Set compute node names to $OS_USERNAME-compute-
+#Set compute node names to $OS_PREFIX-compute-
 sed -i "s/=compute-*/=${OS_PREFIX}-compute-/" ./slurm.conf
 sed -i "s/Host compute-*/Host ${OS_PREFIX}-compute-/" ./ssh.cfg
 
@@ -110,23 +106,9 @@ setfacl -m u:slurm:rwx /etc/
 
 chmod +t /etc
 
-#Possible to handle this at the cloud-init level? From a machine w/
-# pre-loaded openrc, possible via user-data and write_files, yes.
-echo -e "export OS_PROJECT_DOMAIN_NAME=${OS_PROJECT_DOMAIN_NAME}
-export OS_USER_DOMAIN_NAME=${OS_USER_DOMAIN_NAME}
-export OS_PROJECT_NAME=${OS_PROJECT_NAME}
-export OS_USERNAME=${OS_USERNAME}
-export OS_PASSWORD=${OS_PASSWORD}
-export OS_AUTH_URL=${OS_AUTH_URL}
-export OS_IDENTITY_API_VERSION=3" > /etc/slurm/openrc.sh
-
-
-chown slurm:slurm /etc/slurm/openrc.sh
-
-chmod 400 /etc/slurm/openrc.sh
-
 cp prevent-updates.ci /etc/slurm/
 
+chown slurm:slurm /etc/slurm/openrc.sh
 chown slurm:slurm /etc/slurm/prevent-updates.ci
 
 mkdir -p /var/log/slurm
