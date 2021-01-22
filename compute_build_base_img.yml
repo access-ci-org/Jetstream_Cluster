@@ -92,7 +92,7 @@
       disable_gpg_check: yes
 
   - name: Enable CentOS PowerTools repo
-    command: dnf config-manager --set-enabled PowerTools
+    command: dnf config-manager --set-enabled powertools
 
   - name: remove environment modules package
     dnf:

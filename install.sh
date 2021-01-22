@@ -25,7 +25,7 @@ firewall-cmd --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family
 dnf -y install http://repos.openhpc.community/OpenHPC/2/CentOS_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm \
        centos-release-openstack-train
 
-dnf config-manager --set-enabled PowerTools
+dnf config-manager --set-enabled powertools
 
 dnf -y install \
         ohpc-slurm-server \
