@@ -119,9 +119,9 @@
       owner: slurm
       group: slurm
     with_items:
-      - "/var/log/slurm_jobacct.log"
       - "/var/spool/slurm"
       - "/var/spool/slurm/ctld"
+#      - "/var/log/slurm_jobacct.log"
 
   - name: disable selinux
     selinux: state=permissive policy=targeted
