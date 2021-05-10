@@ -63,6 +63,12 @@
       - "openmpi-gnu-ohpc"
       - "ohpc-slurm-client"
       - "lmod-ohpc"
+    packages_to_remove:
+      - "environment-modules"
+      - "containerd.io.x86_64"
+      - "docker-ce.x86_64"
+      - "docker-ce-cli.x86_64"
+      - "docker-ce-rootless-extras.x86_64"
 
   tasks:
 
@@ -84,9 +90,15 @@
       state: present
       lock_timeout: 900
 
-  - name: remove environment modules package
+  - name: Remove docker-ce repo
     yum:
-      name: "environment-modules"
+      name: "docker-ce-stable"
+      state: absent
+      lock_timeout: 900
+
+  - name: remove env-modules and docker packages
+    yum:
+      name: "{{ packages_to_remove }}"
       state: absent
       lock_timeout: 300
 
