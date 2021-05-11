@@ -21,6 +21,8 @@ SUBNET_PREFIX=10.0.0
 yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm \
        centos-release-openstack-rocky
 
+yum -y remove containerd.io.x86_64 docker-ce.x86_64 docker-ce-cli.x86_64 docker-ce-rootless-extras.x86_64 docker-ce-stable
+
 yum -y install \
         ohpc-slurm-server \
         vim \
