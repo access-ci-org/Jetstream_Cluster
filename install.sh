@@ -26,6 +26,9 @@ dnf -y install http://repos.openhpc.community/OpenHPC/2/CentOS_8/x86_64/ohpc-rel
        centos-release-openstack-train
 
 dnf config-manager --set-enabled powertools
+dnf config-manager --set-disabled docker-ce-stable
+
+dnf -y remove containerd.io.x86_64 docker-ce.x86_64 docker-ce-cli.x86_64 docker-ce-rootless-extras.x86_64
 
 dnf -y install \
         ohpc-slurm-server \
