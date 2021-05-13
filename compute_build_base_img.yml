@@ -102,7 +102,6 @@
 
   - name: Disable docker-ce repo
     command: dnf config-manager --set-disabled docker-ce-stable
-      name: "docker-ce-stable"
 
   - name: remove env-modules and docker packages
     dnf:
