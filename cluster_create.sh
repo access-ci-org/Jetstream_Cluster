@@ -1,13 +1,71 @@
 #!/bin/bash
 
-if [[ ! -e ./openrc.sh ]]; then
-  echo "NO OPENRC FOUND! CREATE ONE, AND TRY AGAIN!"
-  exit
-fi
+#This script makes several assumptions:
+# 1. Running on a host with openstack client tools installed
+# 2. Using a default ssh key in ~/.ssh/
+# 3. The user knows what they're doing.
+# 4. Take some options: 
+#    openrc file 
+#    headnode size 
+#    cluster name 
+#    volume size
 
-if [[ -z "$1" ]]; then
-  echo "NO SERVER NAME GIVEN! Please re-run with ./headnode_create.sh <server-name>"
-  exit
+show_help() {
+  echo "Options:
+        HEADNODE_NAME: required, name of the cluster
+        OPENRC_PATH: optional, path to a valid openrc file, default is ./openrc.sh
+        HEADNODE_SIZE: optional, size of the headnode in Openstack flavor (default: m1.small)
+        VOLUME_SIZE: optional, size of storage volume in GB, volume not created if 0
+  
+Usage: $0 -n [HEADNODE_NAME] -o [OPENRC_PATH] -v [VOLUME_SIZE] -s [HEADNODE_SIZE]"
+}
+
+OPTIND=1
+
+openrc_path="./openrc.sh"
+headnode_size="m1.small"
+headnode_name="noname"
+volume_size="0"
+
+while getopts ":hhelp:o:s:n:v:" opt; do
+  case ${opt} in
+    h|help|\?) show_help
+      exit 0
+      ;;
+    o) openrc_path=${OPTARG}
+      ;;
+    s) headnode_size=${OPTARG}
+      ;;
+    v) volume_size=${OPTARG}
+      ;;
+    n) headnode_name=${OPTARG}
+      ;;
+    :) echo "Option -$OPTARG requires an argument."
+      exit 1
+      ;;
+
+  esac
+done
+
+
+if [[ ! -f ${openrc_path} ]]; then
+  echo "openrc path: ${openrc_path} \n does not point to a file!"
+  exit 1
+elif [[ -z $( echo ${headnode_size} | grep -E '^m1|^m2|^g1|^g2' ) ]]; then
+  echo "Headnode size ${headnode_size} is not a valid JS instance size!"
+  exit 1
+elif [[ -n "$(echo ${volume_size} | tr -d [0-9])" ]]; then
+  echo "Volume size must be numeric only, in units of GB."
+  exit 1
+elif [[ ${headnode_name} == "noname" ]]; then
+  echo "No headnode name provided with -n, exiting!"
+  exit 1
+elif [[ -n $(openstack server list | grep -i ${headnode_name}) ]]; then
+  echo "Cluster name [${headnode_name}] conficts with existing Openstack entity!" 
+  exit 1
+elif [[ -n $(openstack volume list | grep -i ${headnode_name}-storage) ]]; then
+  echo "Volume name [${headnode_name}-storage] conficts with existing Openstack entity!" 
+  exit 1
 fi
 
 if [[ ! -e ${HOME}/.ssh/id_rsa.pub ]]; then
@@ -16,8 +74,9 @@ if [[ ! -e ${HOME}/.ssh/id_rsa.pub ]]; then
   exit
 fi
 
-server_name=$1
-source ./openrc.sh
+source ${openrc_path}
+
+volume_name="${headnode_name}-storage"
 
 # Defining a function here to check for quotas, and exit if this script will cause problems!
 # also, storing 'quotas' in a global var, so we're not calling it every single time
@@ -49,9 +108,9 @@ quota_check "key-pairs" "keypair" 1
 quota_check "instances" "server" 1
 
 #These must match those defined in install.sh, slurm_resume.sh, compute_build_base_img.yml
-#  and compute_take_snapshot.sh, which ASSUME the server_name convention has not been deviated from.
+#  and compute_take_snapshot.sh, which ASSUME the headnode_name convention has not been deviated from.
 
-OS_PREFIX=${server_name}
+OS_PREFIX=${headnode_name}
 OS_NETWORK_NAME=${OS_PREFIX}-elastic-net
 OS_SUBNET_NAME=${OS_PREFIX}-elastic-subnet
 OS_ROUTER_NAME=${OS_PREFIX}-elastic-router
@@ -145,32 +204,32 @@ rm ./openrc-app.sh
 
 echo -e "openstack server create\
         --user-data <(echo -e "${user_data}") \
-        --flavor m1.small \
+        --flavor ${headnode_size} \
         --image ${centos_base_image} \
         --key-name ${OS_KEYPAIR_NAME} \
         --security-group ${OS_SSH_SECGROUP_NAME} \
         --security-group ${OS_INTERNAL_SECGROUP_NAME} \
         --nic net-id=${OS_NETWORK_NAME} \
-        ${server_name}"
+        ${headnode_name}"
 
 openstack server create \
         --user-data <(echo -e "${user_data}") \
-        --flavor m1.small \
+        --flavor ${headnode_size} \
         --image ${centos_base_image} \
         --key-name ${OS_KEYPAIR_NAME} \
         --security-group ${OS_SSH_SECGROUP_NAME} \
         --security-group ${OS_INTERNAL_SECGROUP_NAME} \
         --nic net-id=${OS_NETWORK_NAME} \
-        ${server_name}
+        ${headnode_name}
 
 public_ip=$(openstack floating ip create public | awk '/floating_ip_address/ {print $4}')
 #For some reason there's a time issue here - adding a sleep command to allow network to become ready
 sleep 10
-openstack server add floating ip ${server_name} ${public_ip}
+openstack server add floating ip ${headnode_name} ${public_ip}
 
 hostname_test=$(ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@${public_ip} 'hostname')
 echo "test1: ${hostname_test}"
-until [[ ${hostname_test} =~ "${server_name}" ]]; do
+until [[ ${hostname_test} =~ "${headnode_name}" ]]; do
   sleep 2
   hostname_test=$(ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@${public_ip} 'hostname')
   echo "ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no centos@${public_ip} 'hostname'"
@@ -179,9 +238,21 @@ done
 
 rsync -qa --exclude="openrc.sh" -e 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no' ${PWD} centos@${public_ip}:
 
+if [[ "${volume_size}" != "0" ]]; then
+  echo "Creating volume ${volume_name} of ${volume_size} GB"
+  openstack volume create --size ${volume_size} ${volume_name}
+  openstack server add volume --device /dev/sdb ${headnode_name} ${volume_name}
+  sleep 5 # To fix a wait issue in volume creation
+  ssh centos@${public_ip} 'sudo mkfs.xfs /dev/sdb && sudo mkdir -m 777 /export'
+  vol_uuid=$(ssh centos@${public_ip} 'sudo blkid /dev/sdb | sed "s|.*UUID=\"\(.\{36\}\)\" .*|\1|"')
+  echo "volume uuid is: ${vol_uuid}"
+  ssh centos@${public_ip} "echo -e \"UUID=${vol_uuid} /export                 xfs     defaults        0 0\" | sudo tee -a /etc/fstab && sudo mount -a"
+  echo "Volume sdb has UUID ${vol_uuid} on ${public_ip}"
+fi
+  
 echo "Copied over VC files, beginning Slurm installation and Compute Image configuration - should take 8-10 minutes."
 
 #Since PWD on localhost has the full path, we only want the current directory name
 ssh centos@${public_ip} "cd ./${PWD##*/} && sudo ./install.sh"
 
-echo "You should be able to login to your server with your Jetstream key: ${OS_KEYPAIR_NAME}, at ${public_ip}"
+echo "You should be able to login to your headnode with your Jetstream key: ${OS_KEYPAIR_NAME}, at ${public_ip}"
