@@ -97,6 +97,41 @@
       lock_timeout: 900
       disable_gpg_check: yes
 
+  - name: Add CentOS 8.2.2004 vault repo
+    blockinfile:
+      path: /etc/yum.repos.d/CentOS-Vault.repo
+      create: yes
+      block: |
+        [vault-8.2-base]
+        name=CentOS Linux 8.2 - Vault - Base
+        mirrorlist=http://vault.centos.org/8.2.2004/BaseOS
+        baseurl=http://vault.centos.org/8.2.2004/BaseOS/$basearch/os/
+        gpgcheck=1
+        enabled=1
+        
+        [vault-8.2-updates]
+        name=CentOS Linux 8.2 - Vault - AppStream
+        mirrorlist=http://vault.centos.org/8.2.2004/AppStream
+        baseurl=http://vault.centos.org/8.2.2004/AppStream/$basearch/os/
+        gpgcheck=1
+        gpgcheck=1
+        enabled=1
+        
+        [vault-8.2-extra]
+        name=CentOS Linux 8.2 - Vault - Extras
+        mirrorlist=http://vault.centos.org/8.2.2004/extras
+        baseurl=http://vault.centos.org/8.2.2004/extras/$basearch/os/
+        gpgcheck=1
+        enabled=1
+        
+        [vault-8.2-PowerTools]
+        name=CentOS Linux 8.2 - Vault - PowerTools
+        mirrorlist=http://vault.centos.org/8.2.2004/PowerTools
+        baseurl=http://vault.centos.org/8.2.2004/PowerTools/$basearch/os/
+        gpgcheck=1
+        enabled=1
+
+
   - name: Enable CentOS PowerTools repo
     command: dnf config-manager --set-enabled powertools
 
