@@ -77,7 +77,7 @@ OS_SUBNET_NAME=${OS_PREFIX}-elastic-subnet
 OS_NETWORK_NAME=${OS_PREFIX}-elastic-net
 OS_APP_CRED=${OS_PREFIX}-slurm-app-cred
 
-compute_nodes=$(openstack server list -f value -c Name | grep ${headnode_name}-compute )
+compute_nodes=$(openstack server list -f value -c Name | grep -E "compute-${headnode_name}-base-instance|${headnode_name}-compute" )
 if [[ -n "${compute_nodes}" ]]; then
 for node in "${compute_nodes}"
 do
