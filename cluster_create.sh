@@ -16,8 +16,9 @@ show_help() {
         OPENRC_PATH: optional, path to a valid openrc file, default is ./openrc.sh
         HEADNODE_SIZE: optional, size of the headnode in Openstack flavor (default: m1.small)
         VOLUME_SIZE: optional, size of storage volume in GB, volume not created if 0
+        DOCKER_ALLOW: optional flag, leave docker installed on headnode if set.
   
-Usage: $0 -n [HEADNODE_NAME] -o [OPENRC_PATH] -v [VOLUME_SIZE] -s [HEADNODE_SIZE]"
+Usage: $0 -n [HEADNODE_NAME] -o [OPENRC_PATH] -v [VOLUME_SIZE] -s [HEADNODE_SIZE] [-d]"
 }
 
 OPTIND=1
@@ -26,11 +27,14 @@ openrc_path="./openrc.sh"
 headnode_size="m1.small"
 headnode_name="noname"
 volume_size="0"
+docker_allow=0
 
-while getopts ":hhelp:o:s:n:v:" opt; do
+while getopts ":dhhelp:n:o:s:v:" opt; do
   case ${opt} in
     h|help|\?) show_help
       exit 0
+      ;;
+    d) docker_allow=1
       ;;
     o) openrc_path=${OPTARG}
       ;;
@@ -51,7 +55,12 @@ done
 if [[ ! -f ${openrc_path} ]]; then
   echo "openrc path: ${openrc_path} \n does not point to a file!"
   exit 1
-elif [[ -z $( echo ${headnode_size} | grep -E '^m1|^m2|^g1|^g2' ) ]]; then
+fi
+
+#Move this to allow for error checking of OS conflicts
+source ${openrc_path}
+
+if [[ -z $( echo ${headnode_size} | grep -E '^m1|^m2|^g1|^g2' ) ]]; then
   echo "Headnode size ${headnode_size} is not a valid JS instance size!"
   exit 1
 elif [[ -n "$(echo ${volume_size} | tr -d [0-9])" ]]; then
@@ -73,8 +82,6 @@ if [[ ! -e ${HOME}/.ssh/id_rsa.pub ]]; then
   echo "NO KEY FOUND IN ${HOME}/.ssh/id_rsa.pub! - please create one and re-run!"  
   exit
 fi
-
-source ${openrc_path}
 
 volume_name="${headnode_name}-storage"
 
