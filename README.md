@@ -1,4 +1,4 @@
-# Elastic Slurm Cluster in a Jetstream image
+# Elastic Slurm Cluster on the Jetstream Cloud
 
 ## Intro
 
