@@ -1,0 +1,96 @@
+---
+
+- hosts: localhost
+
+  tasks:
+
+  - name: create jupyterhub user and group
+
+  - name: create jupyterhub config dir
+    file:
+      path: /etc/jupyterhub
+      owner: jupyterhub
+      group: jupyterhub
+      mode: 0755
+      state: directory
+
+  - name: install devel deps for building Python
+    yum:
+      state: latest
+      name:
+        - bzip2-devel
+        - ncurses-devel
+        - gdbm-devel
+        - libsqlite3x-devel
+        - sqlite-devel
+        - libuuid-devel
+        - uuid-devel
+        - openssl-devel
+        - readline-devel
+        - zlib-devel
+        - libffi-devel
+        - xz-devel
+        - tk-devel
+
+  - name: create tmp builddir
+    file:
+      path: /tmp/build/
+      state: directory
+
+  - name: fetch python source
+    unarchive:
+      src: https://www.python.org/ftp/python/3.8.10/Python-3.8.10.tgz
+      dest: /tmp/build/
+      remote_src: yes
+
+  - name: run python configure
+    command: 
+      cmd: ./configure --prefix=/opt/python3
+      chdir: /tmp/build/Python-3.8.10
+
+  - name: build python source
+    community.general.make:
+      target: all
+      chdir: /tmp/build/Python-3.8.10
+      
+  - name: install python
+    community.general.make:
+      target: install
+      chdir: /tmp/build/Python-3.8.10
+    become: yes
+
+  - name: run python configure for public build
+    command: 
+      cmd: ./configure --prefix=/opt/ohpc/pub/compilers/python3
+      chdir: /tmp/build/Python-3.8.10
+
+  - name: install python publicly
+    community.general.make:
+      target: install
+      chdir: /tmp/build/Python-3.8.10
+    become: yes
+
+  - name: install jupyterhub
+    command: /opt/python3/bin/pip3 install jupyterhub 
+
+  - name: install jupyterlab
+    command: /opt/ohpc/pub/compilers/python3/bin/pip3 install jupyterlab
+
+  - name: create jupyterhub service
+    template:
+      src: jhub_service.j2
+      dest: /etc/systemd/system/jupyterhub.service
+      mode: 0644
+      owner: root
+      group: root
+
+  - name: install jupyterhub config
+    template:
+      src: jhub_conf.j2
+      dest: /etc/jupyterhub/jupyterhub_config.py
+      owner: jupyterhub
+      group: jupyterhub
+      mode: 0644
+
+  - name: install batchspawner
+    command: echo "Weee"
