@@ -12,11 +12,12 @@
 
 show_help() {
   echo "Options:
-        HEADNODE_NAME: required, name of the cluster
-        OPENRC_PATH: optional, path to a valid openrc file, default is ./openrc.sh
-        HEADNODE_SIZE: optional, size of the headnode in Openstack flavor (default: m1.small)
-        VOLUME_SIZE: optional, size of storage volume in GB, volume not created if 0
-        DOCKER_ALLOW: optional flag, leave docker installed on headnode if set.
+        -n: HEADNODE_NAME: required, name of the cluster
+        -o: OPENRC_PATH: optional, path to a valid openrc file, default is ./openrc.sh
+        -s: HEADNODE_SIZE: optional, size of the headnode in Openstack flavor (default: m1.small)
+        -v: VOLUME_SIZE: optional, size of storage volume in GB, volume not created if 0
+        -d: DOCKER_ALLOW: optional flag, leave docker installed on headnode if set.
+	-j: JUPYTERHUB_BUILD: optional flag, install jupyterhub with SSL certs.
   
 Usage: $0 -n [HEADNODE_NAME] -o [OPENRC_PATH] -v [VOLUME_SIZE] -s [HEADNODE_SIZE] [-d]"
 }
@@ -27,14 +28,16 @@ openrc_path="./openrc.sh"
 headnode_size="m1.small"
 headnode_name="noname"
 volume_size="0"
-docker_allow=0
+install_opts=""
 
-while getopts ":dhhelp:n:o:s:v:" opt; do
+while getopts ":jdhhelp:n:o:s:v:" opt; do
   case ${opt} in
     h|help|\?) show_help
       exit 0
       ;;
-    d) docker_allow=1
+    d) install_opts+="-d "
+      ;;
+    j) install_opts+="-j "
       ;;
     o) openrc_path=${OPTARG}
       ;;
@@ -260,6 +263,6 @@ fi
 echo "Copied over VC files, beginning Slurm installation and Compute Image configuration - should take 8-10 minutes."
 
 #Since PWD on localhost has the full path, we only want the current directory name
-ssh centos@${public_ip} "cd ./${PWD##*/} && sudo ./install.sh"
+ssh centos@${public_ip} "cd ./${PWD##*/} && sudo ./install.sh ${install_opts}"
 
 echo "You should be able to login to your headnode with your Jetstream key: ${OS_KEYPAIR_NAME}, at ${public_ip}"
