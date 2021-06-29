@@ -1,0 +1,16 @@
+<VirtualHost *:80>
+ServerName {{ headnode_public_hostname }}
+ServerAlias {{ headnode_alternate_hostname }}
+{% raw %}
+# redirect all port 80 traffic to 443
+RewriteEngine on
+ReWriteCond %{SERVER_PORT} !^443$
+RewriteRule ^/(.*) https://%{HTTP_HOST}/$1 [NC,R,L]
+RewriteCond %{SERVER_NAME} {% endraw %} ={{ headnode_alternate_hostname }}
+{% raw %}
+RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
+RewriteCond %{SERVER_NAME} {% endraw %} ={{ headnode_public_hostname }}
+{% raw %}
+RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
+</VirtualHost>
+{% endraw %}

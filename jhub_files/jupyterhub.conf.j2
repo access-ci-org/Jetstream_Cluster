@@ -1,0 +1,29 @@
+<VirtualHost *:443>
+ServerName {{ headnode_public_hostname }}
+ServerAlias {{ headnode_alternate_hostname }}
+{% raw %}
+  SSLEngine on
+  SSLProtocol -ALL +TLSv1.2
+  SSLCipherSuite HIGH:!MEDIUM:!aNULL:!MD5:!SEED:!IDEA:!RC4
+  SSLHonorCipherOrder on
+  TraceEnable off
+#JupyterHub - provided changes:
+  RewriteEngine On
+  RewriteCond %{HTTP:Connection} Upgrade [NC]
+  RewriteCond %{HTTP:Upgrade} websocket [NC]
+  RewriteRule /(.*) ws://127.0.0.1:8000/$1 [P,L]
+  RewriteRule /(.*) http://127.0.0.1:8000/$1 [P,L]
+
+  <Location "/">
+    # preserve Host header to avoid cross-origin problems
+    ProxyPreserveHost on
+    # proxy to JupyterHub
+    ProxyPass         http://127.0.0.1:8000/
+    ProxyPassReverse  http://127.0.0.1:8000/
+  </Location>
+
+#  Include /etc/letsencrypt/options-ssl-apache.conf
+{% endraw %}
+  SSLCertificateFile /etc/letsencrypt/live/{{ headnode_public_hostname }}/fullchain.pem
+  SSLCertificateKeyFile /etc/letsencrypt/live/{{ headnode_public_hostname }}/privkey.pem
+</VirtualHost>
