@@ -355,7 +355,7 @@ c.JupyterHub.bind_url = 'http://127.0.0.1:8000'
 #  differ, or `hub_bind_url` for setting the full bind URL.
 #  Default: '127.0.0.1'
 #jecoulte - this is the ip used by the singlespawner instance of a job to connect to the hub
-c.JupyterHub.hub_ip = '{{ headnode_ip }}'
+c.JupyterHub.hub_ip = '{{ headnode_ip }}' #JEC_HEADNODE_IP
 #c.JupyterHub.hub_ip = '127.0.0.1'
 
 ## The internal port for the Hub process.
@@ -1217,7 +1217,7 @@ c.JupyterHub.spawner_class = 'batchspawner.SlurmSpawner'
 c.Spawner.http_timeout = 300
 c.BatchSpawnerBase.req_nprocs = '2'
 c.BatchSpawnerBase.req_partition = 'cloud'
-c.BatchSpawnerBase.req_host = '{{ headnode_hostname }}' #JEC HOSTNAME HERE
+c.BatchSpawnerBase.req_host = '{{ headnode_hostname }}' #JEC_SPAWNER_HOSTNAME 
 c.BatchSpawnerBase.req_runtime = '12:00:00'
 #c.SlurmSpawner.state_exechost_exp = r'delta-vc-compute-\d+'
 
@@ -1270,4 +1270,4 @@ echo "jupyterlab-singleuser ended gracefully"
 #with open('templates/vars.html', 'w') as fp:
 #    fp.write('{%% set keycloak_account_url = "%s" %%}' % keycloak_account_url)
 import os
-public_hostname="{{ headnode_public_hostname }}" #JEC HOSTNAME HERE
+public_hostname="{{ headnode_public_hostname }}" #JEC_PUBLIC_HOSTNAME
