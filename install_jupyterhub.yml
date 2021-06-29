@@ -6,11 +6,57 @@
     headnode_ip: 10.0.0.4
     headnode_hostname: sgci21-containers
     headnode_public_hostname: sgci21-contut.jetstream-cloud.org
-#TODO: Add vars certbot role from geerlingguy
-# add certbot role
-# add httpd.conf file for jhub virtualhost
+    headnode_alternate_hostname: js-169-221.jetstream-cloud.org
+    certbot_create_if_missing: yes
+    certbot_admin_email: jecoulte@iu.edu
+    certbot_certs:
+      - domains:
+          - "{{ headnode_public_hostname }}"
+    certbot_create_standalone_stop_services:
+      - httpd
+
+  roles:
+   - geerlingguy.certbot
+
+  pre_tasks:
+
+  - name: disable selinux
+    ansible.posix.selinux:
+      policy: targeted
+      state: permissive
+
+  - name: install httpd bits
+    dnf:
+      state: latest
+      name:
+        - nodejs
+        - npm
+        - httpd
+        - httpd-filesystem
+        - httpd-tools
+        - python3-certbot-apache
 
   tasks:
+
+  - name: https redirect config
+    template:
+      src: jhub_files/https_redirect.conf.j2
+      dest: /etc/httpd/conf.d/https_redirect.conf
+      owner: root
+      mode: 0644
+
+  - name: jupyterhub proxy config
+    template:
+      src: jhub_files/jupyterhub.conf.j2
+      dest: /etc/httpd/conf.d/jupyterhub.conf
+      owner: root
+      mode: 0644
+
+  - name: restart httpd
+    service:
+      name: httpd
+      state: restarted
+      enabled: yes
 
   - name: create jupyterhub user and group
     user:
@@ -42,17 +88,6 @@
         - libffi-devel
         - xz-devel
         - tk-devel
-
-  - name: install system deps for jhub
-    dnf:
-      state: latest
-      name:
-        - nodejs
-        - npm
-        - httpd
-        - httpd-filesystem
-        - httpd-tools
-        - python3-certbot-apache
 
   - name: install configurable-http-proxy
     npm:
@@ -109,7 +144,7 @@
 
   - name: create jupyterhub service
     template:
-      src: jhub_service.j2
+      src: jhub_files/jhub_service.j2
       dest: /etc/systemd/system/jupyterhub.service
       mode: 0644
       owner: root
@@ -118,7 +153,7 @@
 #This is hard b/c of Batchspawner config
   - name: install base jupyterhub config
     copy:
-      src: jhub_conf.py
+      src: jhub_files/jhub_conf.py
       dest: /etc/jupyterhub/jupyterhub_config.py
       owner: jupyterhub
       group: jupyterhub
