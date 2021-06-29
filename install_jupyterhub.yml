@@ -2,9 +2,20 @@
 
 - hosts: localhost
 
+  vars:
+    headnode_ip: 10.0.0.4
+    headnode_hostname: sgci21-containers
+    headnode_public_hostname: sgci21-contut.jetstream-cloud.org
+#TODO: Add vars certbot role from geerlingguy
+# add certbot role
+# add httpd.conf file for jhub virtualhost
+
   tasks:
 
   - name: create jupyterhub user and group
+    user:
+      name: jupyterhub
+      state: present
 
   - name: create jupyterhub config dir
     file:
@@ -15,7 +26,7 @@
       state: directory
 
   - name: install devel deps for building Python
-    yum:
+    dnf:
       state: latest
       name:
         - bzip2-devel
@@ -31,6 +42,22 @@
         - libffi-devel
         - xz-devel
         - tk-devel
+
+  - name: install system deps for jhub
+    dnf:
+      state: latest
+      name:
+        - nodejs
+        - npm
+        - httpd
+        - httpd-filesystem
+        - httpd-tools
+        - python3-certbot-apache
+
+  - name: install configurable-http-proxy
+    npm:
+      name: configurable-http-proxy
+      global: yes
 
   - name: create tmp builddir
     file:
@@ -71,10 +98,14 @@
     become: yes
 
   - name: install jupyterhub
-    command: /opt/python3/bin/pip3 install jupyterhub 
+    pip: 
+      executable: /opt/python3/bin/pip3 
+      name: jupyterhub 
 
   - name: install jupyterlab
-    command: /opt/ohpc/pub/compilers/python3/bin/pip3 install jupyterlab
+    pip:
+      executable: /opt/ohpc/pub/compilers/python3/bin/pip3 
+      name: jupyterlab
 
   - name: create jupyterhub service
     template:
@@ -84,13 +115,40 @@
       owner: root
       group: root
 
-  - name: install jupyterhub config
-    template:
-      src: jhub_conf.j2
+#This is hard b/c of Batchspawner config
+  - name: install base jupyterhub config
+    copy:
+      src: jhub_conf.py
       dest: /etc/jupyterhub/jupyterhub_config.py
       owner: jupyterhub
       group: jupyterhub
       mode: 0644
 
-  - name: install batchspawner
-    command: echo "Weee"
+  - name: set headnode ip in jhub_config
+    lineinfile:
+      regexp: JEC_HEADNODE_IP
+      line: "c.JupyterHub.hub_ip = \'{{ headnode_ip }}\' #JEC_HEADNODE_IP"
+      path: /etc/jupyterhub/jupyterhub_config.py
+
+  - name: set hostname in jhub_config for batchspawner
+    lineinfile:
+      regexp: JEC_SPAWNER_HOSTNAME
+      line: "c.BatchSpawnerBase.req_host = \'{{ headnode_hostname }}\' #JEC_SPAWNER_HOSTNAME "
+      path: /etc/jupyterhub/jupyterhub_config.py
+
+  - name: set hostname in jhub_config for batchspawner
+    lineinfile:
+      regexp: JEC_PUBLIC_HOSTNAME
+      line: "public_hostname = \'{{ headnode_public_hostname }}\' #JEC_PUBLIC_HOSTNAME"
+      path: /etc/jupyterhub/jupyterhub_config.py
+
+  - name: install batchspawner to jhub python
+    pip:
+      name: batchspawner
+      executable: /opt/python3/bin/pip3
+
+  - name: start the jupyterhub service
+    service:
+      name: jupyterhub
+      enabled: yes
+      state: started
