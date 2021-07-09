@@ -9,6 +9,8 @@
     headnode_alternate_hostname: js-169-221.jetstream-cloud.org
     certbot_create_if_missing: yes
     certbot_admin_email: jecoulte@iu.edu
+    certbot_install_method: snap
+    certbot_create_method: standalone
     certbot_certs:
       - domains:
           - "{{ headnode_public_hostname }}"
@@ -58,10 +60,44 @@
       state: restarted
       enabled: yes
 
+  - name: create a shadow group
+    group:
+      name: shadow
+      state: present
+
+  - name: let shadow group read /etc/shadow
+    file:
+      path: /etc/shadow
+      mode: 0040
+      group: shadow
+      owner: root
+
   - name: create jupyterhub user and group
     user:
       name: jupyterhub
       state: present
+      groups: shadow
+
+  - name: create jupyterhub-users group
+    group:
+      name: jupyterhub-users
+      state: present
+
+  - name: create sudoers directory
+    file:
+      path: /etc/sudoers.d
+      owner: root
+      group: root
+      mode: 0750
+      state: directory
+
+  - name: set sudoers permissions for jupyterhub non-root
+    copy:
+      src: jhub_files/jhub_sudoers
+      dest: /etc/sudoers.d/
+      owner: root
+      group: root
+      mode: 0440
 
   - name: create jupyterhub config dir
     file:
@@ -123,7 +159,7 @@
 
   - name: run python configure for public build
     command: 
-      cmd: ./configure --prefix=/opt/ohpc/pub/compilers/python3
+      cmd: ./configure --prefix=/opt/ohpc/pub/compiler/python3
       chdir: /tmp/build/Python-3.8.10
 
   - name: install python publicly
@@ -134,12 +170,12 @@
 
   - name: install jupyterhub
     pip: 
-      executable: /opt/python3/bin/pip3 
+      executable: /opt/python3/bin/pip3
       name: jupyterhub 
 
   - name: install jupyterlab
     pip:
-      executable: /opt/ohpc/pub/compilers/python3/bin/pip3 
+      executable: /opt/ohpc/pub/compiler/python3/bin/pip3
       name: jupyterlab
 
   - name: create jupyterhub service
@@ -181,6 +217,24 @@
     pip:
       name: batchspawner
       executable: /opt/python3/bin/pip3
+
+  - name: install batchspawner to public python
+    pip:
+      name: batchspawner
+      executable: /opt/ohpc/pub/compiler/python3/bin/pip3
+
+  - name: create python module dir
+    file:
+      state: directory
+      path: /opt/ohpc/pub/modulefiles/python3.8
+
+  - name: create python module
+    copy:
+      src: jhub_files/python_mod_3.8
+      dest: /opt/ohpc/pub/modulefiles/python3.8/3.8.10
+      mode: 0777
+      owner: root
+      group: root
 
   - name: start the jupyterhub service
     service:
