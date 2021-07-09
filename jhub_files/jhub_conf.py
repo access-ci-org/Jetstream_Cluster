@@ -1034,7 +1034,7 @@ c.JupyterHub.hub_ip = '{{ headnode_ip }}' #JEC_HEADNODE_IP
 #  Defaults to an empty set, in which case no user has admin access.
 #  Default: set()
 # c.Authenticator.admin_users = set()
-c.Authenticator.admin_users = { 'jecoulte','gateway-user' }
+c.Authenticator.admin_users = { 'centos' }
 
 ## Set of usernames that are allowed to log in.
 #  
@@ -1221,7 +1221,7 @@ c.BatchSpawnerBase.req_host = '{{ headnode_hostname }}' #JEC_SPAWNER_HOSTNAME
 c.BatchSpawnerBase.req_runtime = '12:00:00'
 #c.SlurmSpawner.state_exechost_exp = r'delta-vc-compute-\d+'
 
-c.SlurmSpawner.cmd = "jupyterlab-singleuser"
+c.SlurmSpawner.cmd = "jupyter-labhub"
 
 c.SlurmSpawner.batch_script="""#!/bin/bash
 #SBATCH --output={{homedir}}/jupyterhub_slurmspawner_%j.log
