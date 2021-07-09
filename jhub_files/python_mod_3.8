@@ -1,0 +1,29 @@
+#%Module1.0#####################################################################
+
+proc ModulesHelp { } {
+
+puts stderr " "
+puts stderr "This module loads Python 3.8.10"
+puts stderr " "
+puts stderr "See the man pages for python3 for detailed information"
+puts stderr "on available compiler options and command-line syntax."
+puts stderr " "
+
+puts stderr "\nVersion 3.8.10\n"
+
+}
+module-whatis "Name: Python 3.8.10 environment"
+module-whatis "Version: 3.8.10"
+module-whatis "Category: compiler, runtime support"
+module-whatis "Description: Python 3.8.10 compiler, REPL, and runtime environment"
+module-whatis "URL: http://python.org/"
+
+set     version			    3.8.10
+
+prepend-path    PATH                /opt/ohpc/pub/compiler/python3/bin
+prepend-path    MANPATH             /opt/ohpc/pub/compiler/python3/share/man
+prepend-path    INCLUDE             /opt/ohpc/pub/compiler/python3/include
+prepend-path	LD_LIBRARY_PATH	    /opt/ohpc/pub/compiler/python3/lib
+prepend-path    MODULEPATH          /opt/ohpc/pub/moduledeps/python3.8
+
+family "python_base"
