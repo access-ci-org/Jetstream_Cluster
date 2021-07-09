@@ -266,3 +266,9 @@ echo "Copied over VC files, beginning Slurm installation and Compute Image confi
 ssh centos@${public_ip} "cd ./${PWD##*/} && sudo ./install.sh ${install_opts}"
 
 echo "You should be able to login to your headnode with your Jetstream key: ${OS_KEYPAIR_NAME}, at ${public_ip}"
+
+if [[ ${install_opts} =~ "-j" ]]; then
+  echo "You will need to edit the file ${PWD}/install_jupyterhub.yml to reflect the name and ip of your current server"
+  echo "and run the following command from the directory ${PWD} ON THE NEW HEADNODE to complete your jupyterhub setup:"
+  echo "sudo ansible-playbook -v --ssh-common-args='-o StrictHostKeyChecking=no' install_jupyterhub.yml"
+fi

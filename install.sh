@@ -231,7 +231,7 @@ if [[ ${jhub_build} == 1 ]]; then
   ansible-galaxy collection install community.general
   ansible-galaxy collection install ansible.posix
   ansible-galaxy install geerlingguy.certbot
-  ansible-playbook -v --ssh-common-args='-o StrictHostKeyChecking=no' install_jupyterhub.yml
+#  ansible-playbook -v --ssh-common-args='-o StrictHostKeyChecking=no' install_jupyterhub.yml
 fi
 
 #Start required services
