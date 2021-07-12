@@ -255,6 +255,10 @@ if [[ "${volume_size}" != "0" ]]; then
   echo "volume uuid is: ${vol_uuid}"
   ssh centos@${public_ip} "echo -e \"UUID=${vol_uuid} /export                 xfs     defaults        0 0\" | sudo tee -a /etc/fstab && sudo mount -a"
   echo "Volume sdb has UUID ${vol_uuid} on ${public_ip}"
+  if [[ ${docker_allow} == 1 ]]; then
+    ssh centos@${public_ip} "echo -E '{ \"data-root\": \"/export/docker\" }' | sudo tee -a /etc/docker/daemon.json && sudo systemctl restart docker"
+  fi
+
 fi
   
 echo "Copied over VC files, beginning Slurm installation and Compute Image configuration - should take 8-10 minutes."
