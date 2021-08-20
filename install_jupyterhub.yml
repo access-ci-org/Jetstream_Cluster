@@ -3,12 +3,10 @@
 - hosts: localhost
 
   vars:
-    headnode_ip: 10.0.0.4
-    headnode_hostname: sgci21-containers
-    headnode_public_hostname: sgci21-contut.jetstream-cloud.org
-    headnode_alternate_hostname: js-169-221.jetstream-cloud.org
+    headnode_public_hostname: FILL ME IN
+    headnode_alternate_hostname: "" #Optional addition DNS entry pointing to your host
     certbot_create_if_missing: yes
-    certbot_admin_email: jecoulte@iu.edu
+    certbot_admin_email: FILL ME IN
     certbot_install_method: snap
     certbot_create_method: standalone
     certbot_certs:
