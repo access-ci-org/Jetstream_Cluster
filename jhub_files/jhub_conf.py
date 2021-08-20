@@ -1219,7 +1219,6 @@ c.BatchSpawnerBase.req_nprocs = '2'
 c.BatchSpawnerBase.req_partition = 'cloud'
 c.BatchSpawnerBase.req_host = '{{ headnode_hostname }}' #JEC_SPAWNER_HOSTNAME 
 c.BatchSpawnerBase.req_runtime = '12:00:00'
-#c.SlurmSpawner.state_exechost_exp = r'delta-vc-compute-\d+'
 
 c.SlurmSpawner.cmd = "jupyter-labhub"
 
