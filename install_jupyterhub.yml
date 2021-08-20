@@ -37,8 +37,32 @@
         - httpd-filesystem
         - httpd-tools
         - python3-certbot-apache
+        - snapd
+        - snap-confine
+        - snapd-selinux
+
+  - name: start and enable snapd
+    service: 
+      name: snapd
+      state: started
+      enabled: yes
+
+  - name: add http/s to firewalld
+    shell: firewall-cmd --add-service http --zone=public --permanent && \
+           firewall-cmd --add-service https --zone=public --permanent && \
+           firewall-cmd --reload
 
   tasks:
+
+  - name: Get the headnode private IP
+    local_action:
+      module: shell ip addr | grep -Eo '10.0.0.[0-9]*' | head -1
+    register: headnode_private_ip
+
+  - name: Get the headnode hostname 
+    local_action:
+      module: shell hostname -s
+    register: headnode_hostname
 
   - name: https redirect config
     template:
@@ -198,13 +222,13 @@
   - name: set headnode ip in jhub_config
     lineinfile:
       regexp: JEC_HEADNODE_IP
-      line: "c.JupyterHub.hub_ip = \'{{ headnode_ip }}\' #JEC_HEADNODE_IP"
+      line: "c.JupyterHub.hub_ip = \'{{ headnode_private_ip.stdout }}\' #JEC_HEADNODE_IP"
       path: /etc/jupyterhub/jupyterhub_config.py
 
   - name: set hostname in jhub_config for batchspawner
     lineinfile:
       regexp: JEC_SPAWNER_HOSTNAME
-      line: "c.BatchSpawnerBase.req_host = \'{{ headnode_hostname }}\' #JEC_SPAWNER_HOSTNAME "
+      line: "c.BatchSpawnerBase.req_host = \'{{ headnode_hostname.stdout }}\' #JEC_SPAWNER_HOSTNAME "
       path: /etc/jupyterhub/jupyterhub_config.py
 
   - name: set hostname in jhub_config for batchspawner
