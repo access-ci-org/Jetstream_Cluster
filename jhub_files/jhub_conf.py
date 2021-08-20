@@ -1214,6 +1214,7 @@ c.Authenticator.admin_users = { 'centos' }
 #BatchSpawner config:
 import batchspawner
 c.JupyterHub.spawner_class = 'batchspawner.SlurmSpawner'
+#c.JupyterHub.spawner_class = 'wrapspawner.ProfilesSpawner'
 c.Spawner.http_timeout = 300
 c.BatchSpawnerBase.req_nprocs = '2'
 c.BatchSpawnerBase.req_partition = 'cloud'
@@ -1246,6 +1247,39 @@ export XDG_RUNTIME_DIR=$HOME/.jupyter-run
 
 echo "jupyterlab-singleuser ended gracefully"
 """
+##------------------------------------------------------------------------------
+## ProfilesSpawner configuration
+##------------------------------------------------------------------------------
+## List of profiles to offer for selection. Signature is:
+##   List(Tuple( Unicode, Unicode, Type(Spawner), Dict ))
+## corresponding to profile display name, unique key, Spawner class,
+## dictionary of spawner config options.
+##
+## The first three values will be exposed in the input_template as {display},
+## {key}, and {type}
+##
+#c.ProfilesSpawner.profiles = [
+#   ('Mesabi - 2 cores, 4 GB, 8 hours', 'mesabi2c4g12h', 'batchspawner.TorqueSpawner',
+#   ( "Local server", 'local', 'jupyterhub.spawner.LocalProcessSpawner', {'ip':'0.0.0.0'} ),
+#      dict(req_nprocs='2', req_queue='mesabi', req_runtime='8:00:00', req_memory='4gb')),
+#   ('Mesabi - 12 cores, 128 GB, 4 hours', 'mesabi128gb', 'batchspawner.TorqueSpawner',
+#      dict(req_nprocs='12', req_queue='ram256g', req_runtime='4:00:00', req_memory='125gb')),
+#   ('Mesabi - 2 cores, 4 GB, 24 hours', 'mesabi2c4gb24h', 'batchspawner.TorqueSpawner',
+#      dict(req_nprocs='2', req_queue='mesabi', req_runtime='24:00:00', req_memory='4gb')),
+#   ('Interactive Cluster - 2 cores, 4 GB, 8 hours', 'lab', 'batchspawner.TorqueSpawner',
+#      dict(req_nprocs='2', req_host='labhost.xyz.edu', req_queue='lab',
+#          req_runtime='8:00:00', req_memory='4gb', state_exechost_exp='')),
+#   ]
+#c.ProfilesSpawner.profiles = [
+#   ( "Cloud queue", 'cloud-norm', 'batchspawner.SlurmSpawner', 
+#      dict(req_nprocs='2', req_partition='cloud', req_runtime='8:00:00')),
+#   ( "Cloud queue 2", 'cloud-2', 'batchspawner.SlurmSpawner', 
+#      dict(req_nprocs='2', req_partition='cloud2', req_runtime='1:00:00')),
+#   ( "Cloud queue 3", 'cloud-3', 'batchspawner.SlurmSpawner', 
+#      dict(req_nprocs='2', req_partition='cloud3', req_runtime='2:00:00')),
+#]
+#c.ProfilesSpawner.ip = '0.0.0.0'
+
 #------------------------------------------------------------------------------
 # Keycloak Configuration
 #------------------------------------------------------------------------------
