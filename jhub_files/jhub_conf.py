@@ -1213,8 +1213,8 @@ c.Authenticator.admin_users = { 'centos' }
 #------------------------------------------------------------------------------
 #BatchSpawner config:
 import batchspawner
-c.JupyterHub.spawner_class = 'batchspawner.SlurmSpawner'
-#c.JupyterHub.spawner_class = 'wrapspawner.ProfilesSpawner'
+#c.JupyterHub.spawner_class = 'batchspawner.SlurmSpawner'
+c.JupyterHub.spawner_class = 'wrapspawner.ProfilesSpawner'
 c.Spawner.http_timeout = 300
 c.BatchSpawnerBase.req_nprocs = '2'
 c.BatchSpawnerBase.req_partition = 'cloud'
@@ -1270,15 +1270,15 @@ echo "jupyterlab-singleuser ended gracefully"
 #      dict(req_nprocs='2', req_host='labhost.xyz.edu', req_queue='lab',
 #          req_runtime='8:00:00', req_memory='4gb', state_exechost_exp='')),
 #   ]
-#c.ProfilesSpawner.profiles = [
-#   ( "Cloud queue", 'cloud-norm', 'batchspawner.SlurmSpawner', 
-#      dict(req_nprocs='2', req_partition='cloud', req_runtime='8:00:00')),
+c.ProfilesSpawner.profiles = [
+   ( "Cloud queue", 'cloud-norm', 'batchspawner.SlurmSpawner', 
+      dict(req_nprocs='2', req_partition='cloud', req_runtime='8:00:00')),
+]
 #   ( "Cloud queue 2", 'cloud-2', 'batchspawner.SlurmSpawner', 
 #      dict(req_nprocs='2', req_partition='cloud2', req_runtime='1:00:00')),
 #   ( "Cloud queue 3", 'cloud-3', 'batchspawner.SlurmSpawner', 
 #      dict(req_nprocs='2', req_partition='cloud3', req_runtime='2:00:00')),
-#]
-#c.ProfilesSpawner.ip = '0.0.0.0'
+c.ProfilesSpawner.ip = '0.0.0.0'
 
 #------------------------------------------------------------------------------
 # Keycloak Configuration
