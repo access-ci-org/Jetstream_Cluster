@@ -4,7 +4,7 @@
 
   vars:
     headnode_public_hostname: FILL ME IN
-    headnode_alternate_hostname: FILL ME IN (typically js-xxx-yyy.jetstream-cloud.org)
+    headnode_alternate_hostname: "" #Optional addition DNS entry pointing to your host
     certbot_create_if_missing: yes
     certbot_admin_email: FILL ME IN
     certbot_install_method: snap
@@ -35,6 +35,20 @@
         - httpd-filesystem
         - httpd-tools
         - python3-certbot-apache
+        - snapd
+        - snap-confine
+        - snapd-selinux
+
+  - name: start and enable snapd
+    service: 
+      name: snapd
+      state: started
+      enabled: yes
+
+  - name: add http/s to firewalld
+    shell: firewall-cmd --add-service http --zone=public --permanent && \
+           firewall-cmd --add-service https --zone=public --permanent && \
+           firewall-cmd --reload
 
   tasks:
 

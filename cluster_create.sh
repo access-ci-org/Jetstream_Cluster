@@ -126,6 +126,7 @@ OS_SUBNET_NAME=${OS_PREFIX}-elastic-subnet
 OS_ROUTER_NAME=${OS_PREFIX}-elastic-router
 OS_SSH_SECGROUP_NAME=${OS_PREFIX}-ssh-global
 OS_INTERNAL_SECGROUP_NAME=${OS_PREFIX}-internal
+OS_HTTP_S_SECGROUP_NAME=${OS_PREFIX}-http-s
 OS_KEYPAIR_NAME=${OS_USERNAME}-elastic-key
 OS_APP_CRED=${OS_PREFIX}-slurm-app-cred
 
@@ -160,6 +161,11 @@ if [[ ! ("${security_groups}" =~ "${OS_INTERNAL_SECGROUP_NAME}") ]]; then
   openstack security group create --description "internal group for cluster" ${OS_INTERNAL_SECGROUP_NAME}
   openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip ${SUBNET_PREFIX}.0/24 ${OS_INTERNAL_SECGROUP_NAME}
   openstack security group rule create --protocol icmp ${OS_INTERNAL_SECGROUP_NAME}
+fi
+if [[ (! ("${security_groups}" =~ "${OS_HTTP_S_SECGROUP_NAME}")) && "${install_opts}" =~ "j" ]]; then
+  openstack security group create --description "http/s for jupyterhub" ${OS_HTTP_S_SECGROUP_NAME}
+  openstack security group rule create --protocol tcp --dst-port 80 --remote-ip 0.0.0.0/0 ${OS_HTTP_S_SECGROUP_NAME}
+  openstack security group rule create --protocol tcp --dst-port 443 --remote-ip 0.0.0.0/0 ${OS_HTTP_S_SECGROUP_NAME}
 fi
 
 #Check if ${HOME}/.ssh/id_rsa.pub exists in JS
@@ -258,6 +264,10 @@ if [[ "${volume_size}" != "0" ]]; then
   echo "volume uuid is: ${vol_uuid}"
   ssh centos@${public_ip} "echo -e \"UUID=${vol_uuid} /export                 xfs     defaults        0 0\" | sudo tee -a /etc/fstab && sudo mount -a"
   echo "Volume sdb has UUID ${vol_uuid} on ${public_ip}"
+fi
+
+if [[ "${install_opts}" =~ "-j" ]]; then
+  openstack server add security group ${headnode_name} ${OS_HTTP_S_SECGROUP_NAME}
 fi
   
 echo "Copied over VC files, beginning Slurm installation and Compute Image configuration - should take 8-10 minutes."
