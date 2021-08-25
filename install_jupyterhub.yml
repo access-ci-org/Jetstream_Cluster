@@ -3,12 +3,10 @@
 - hosts: localhost
 
   vars:
-    headnode_ip: 10.0.0.4
-    headnode_hostname: sgci21-containers
-    headnode_public_hostname: sgci21-contut.jetstream-cloud.org
-    headnode_alternate_hostname: js-169-221.jetstream-cloud.org
+    headnode_public_hostname: FILL ME IN
+    headnode_alternate_hostname: FILL ME IN (typically js-xxx-yyy.jetstream-cloud.org)
     certbot_create_if_missing: yes
-    certbot_admin_email: jecoulte@iu.edu
+    certbot_admin_email: FILL ME IN
     certbot_install_method: snap
     certbot_create_method: standalone
     certbot_certs:
@@ -39,6 +37,16 @@
         - python3-certbot-apache
 
   tasks:
+
+  - name: Get the headnode private IP
+    local_action:
+      module: shell ip addr | grep -Eo '10.0.0.[0-9]*' | head -1
+    register: headnode_private_ip
+
+  - name: Get the headnode hostname 
+    local_action:
+      module: shell hostname -s
+    register: headnode_hostname
 
   - name: https redirect config
     template:
@@ -198,13 +206,13 @@
   - name: set headnode ip in jhub_config
     lineinfile:
       regexp: JEC_HEADNODE_IP
-      line: "c.JupyterHub.hub_ip = \'{{ headnode_ip }}\' #JEC_HEADNODE_IP"
+      line: "c.JupyterHub.hub_ip = \'{{ headnode_private_ip.stdout }}\' #JEC_HEADNODE_IP"
       path: /etc/jupyterhub/jupyterhub_config.py
 
   - name: set hostname in jhub_config for batchspawner
     lineinfile:
       regexp: JEC_SPAWNER_HOSTNAME
-      line: "c.BatchSpawnerBase.req_host = \'{{ headnode_hostname }}\' #JEC_SPAWNER_HOSTNAME "
+      line: "c.BatchSpawnerBase.req_host = \'{{ headnode_hostname.stdout }}\' #JEC_SPAWNER_HOSTNAME "
       path: /etc/jupyterhub/jupyterhub_config.py
 
   - name: set hostname in jhub_config for batchspawner
