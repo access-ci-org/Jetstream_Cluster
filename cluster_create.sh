@@ -253,7 +253,7 @@ if [[ "${volume_size}" != "0" ]]; then
   openstack volume create --size ${volume_size} ${volume_name}
   openstack server add volume --device /dev/sdb ${headnode_name} ${volume_name}
   sleep 5 # To fix a wait issue in volume creation
-  ssh centos@${public_ip} 'sudo mkfs.xfs /dev/sdb && sudo mkdir -m 777 /export'
+  ssh -o StrictHostKeyChecking=no centos@${public_ip} 'sudo mkfs.xfs /dev/sdb && sudo mkdir -m 777 /export'
   vol_uuid=$(ssh centos@${public_ip} 'sudo blkid /dev/sdb | sed "s|.*UUID=\"\(.\{36\}\)\" .*|\1|"')
   echo "volume uuid is: ${vol_uuid}"
   ssh centos@${public_ip} "echo -e \"UUID=${vol_uuid} /export                 xfs     defaults        0 0\" | sudo tee -a /etc/fstab && sudo mount -a"
@@ -263,12 +263,12 @@ fi
 echo "Copied over VC files, beginning Slurm installation and Compute Image configuration - should take 8-10 minutes."
 
 #Since PWD on localhost has the full path, we only want the current directory name
-ssh centos@${public_ip} "cd ./${PWD##*/} && sudo ./install.sh ${install_opts}"
+ssh -o StrictHostKeyChecking=no centos@${public_ip} "cd ./${PWD##*/} && sudo ./install.sh ${install_opts}"
 
 echo "You should be able to login to your headnode with your Jetstream key: ${OS_KEYPAIR_NAME}, at ${public_ip}"
 
 if [[ ${install_opts} =~ "-j" ]]; then
-  echo "You will need to edit the file ${PWD}/install_jupyterhub.yml to reflect the name and ip of your current server"
-  echo "and run the following command from the directory ${PWD} ON THE NEW HEADNODE to complete your jupyterhub setup:"
+  echo "You will need to edit the file ${PWD}/install_jupyterhub.yml to reflect the public hostname of your new cluster, and use your email for SSL certs."
+  echo "Then, run the following command from the directory ${PWD} ON THE NEW HEADNODE to complete your jupyterhub setup:"
   echo "sudo ansible-playbook -v --ssh-common-args='-o StrictHostKeyChecking=no' install_jupyterhub.yml"
 fi
