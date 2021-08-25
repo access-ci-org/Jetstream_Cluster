@@ -195,6 +195,13 @@
       executable: /opt/python3/bin/pip3
       name: jupyterhub 
 
+      #  - name: install wrapspawner
+      #    pip: 
+      #      executable: /opt/python3/bin/pip3
+      #      name: 
+      #        - wrapspawner
+      #        - traitlets<5
+
   - name: install jupyterlab
     pip:
       executable: /opt/ohpc/pub/compiler/python3/bin/pip3
