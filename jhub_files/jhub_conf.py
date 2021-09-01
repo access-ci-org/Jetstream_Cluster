@@ -1216,6 +1216,8 @@ import batchspawner
 #c.JupyterHub.spawner_class = 'batchspawner.SlurmSpawner'
 c.JupyterHub.spawner_class = 'wrapspawner.ProfilesSpawner'
 c.Spawner.http_timeout = 300
+c.Spawner.start_timeout = 300
+c.Spawner.poll_interval = 10
 c.BatchSpawnerBase.req_nprocs = '2'
 c.BatchSpawnerBase.req_partition = 'cloud'
 c.BatchSpawnerBase.req_host = '{{ headnode_hostname }}' #JEC_SPAWNER_HOSTNAME 
