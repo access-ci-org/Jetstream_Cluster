@@ -3,10 +3,13 @@
 OPTIND=1
 
 docker_allow=0 #default to NOT installing docker; must be 0 or 1
+jhub_build=0 #default to NOT installing jupyterhub; must be 0 or 1
 
-while getopts ":d" opt; do
+while getopts ":jd" opt; do
   case ${opt} in
     d) docker_allow=1
+      ;;
+    j) jhub_build=1
       ;;
     \?) echo "BAD OPTION! $opt TRY AGAIN"
       exit 1
@@ -41,7 +44,7 @@ dnf -y install http://repos.openhpc.community/OpenHPC/2/CentOS_8/x86_64/ohpc-rel
 
 dnf config-manager --set-enabled powertools
 
-if [[ ${docker_allow} == 1 ]]; then
+if [[ ${docker_allow} == 0 ]]; then
   dnf config-manager --set-disabled docker-ce-stable
   
   dnf -y remove containerd.io.x86_64 docker-ce.x86_64 docker-ce-cli.x86_64 docker-ce-rootless-extras.x86_64
@@ -223,6 +226,13 @@ ansible-playbook -v --ssh-common-args='-o StrictHostKeyChecking=no' compute_buil
 
 #to allow other users to run ansible!
 rm -r /tmp/.ansible
+
+if [[ ${jhub_build} == 1 ]]; then
+  ansible-galaxy collection install community.general
+  ansible-galaxy collection install ansible.posix
+  ansible-galaxy install geerlingguy.certbot
+#  ansible-playbook -v --ssh-common-args='-o StrictHostKeyChecking=no' install_jupyterhub.yml
+fi
 
 #Start required services
 systemctl enable slurmctld munge nfs-server rpcbind 

@@ -1,0 +1,5 @@
+##Jupyterhub batchspawner
+Cmnd_Alias JUPYTER_CMD = /opt/python3/bin/batchspawner-singleuser, /opt/python3/bin/sudospawner, /bin/sbatch, /bin/squeue, /bin/scancel
+
+%jupyterhub-users ALL=(jupyterhub) /usr/bin/sudo
+jupyterhub ALL=(%jupyterhub-users) NOPASSWD:SETENV:JUPYTER_CMD

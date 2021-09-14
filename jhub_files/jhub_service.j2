@@ -1,0 +1,11 @@
+[Unit]
+Description=Jupyterhub
+
+[Service]
+User=jupyterhub
+ExecStart=/opt/python3/bin/jupyterhub -f /etc/jupyterhub/jupyterhub_config.py
+WorkingDirectory=/etc/jupyterhub
+After=network-online.target
+
+[Install]
+WantedBy=multi-user.target
