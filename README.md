@@ -7,10 +7,12 @@ cluster in an Openstack environment, specifically aimed at the XSEDE
 Jetstream resource.
 
 The basic structure is to have a single image act as headnode, with
-compute nodes managed by SLURM via the openstack API.
-The current plan for compute nodes is to
-use a basic CentOS 7 image, followed by an Ansible playbook to add 
-software, mounts, users, config files, etc. 
+compute nodes managed by SLURM via the openstack API. A customized 
+image is created for worker nodes, which contains configuration 
+and software specific to that cluster. The Slurm daemon on the
+headnode dynamically creates and destroys worker nodes in response to 
+jobs in the queue. The current version is based on CentOS 8, using
+RPMs from the [OpenHPC project](https://openhpc.community).
 
 ## Current Useage
 To build your own Virtual cluster, starting on your localhost:
