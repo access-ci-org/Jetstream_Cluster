@@ -1,0 +1,272 @@
+---
+
+- hosts: localhost
+
+  vars:
+    headnode_public_hostname: FILL-ME-IN
+    headnode_alternate_hostname: "" #Optional addition DNS entry pointing to your host
+    certbot_create_if_missing: yes
+    certbot_admin_email: FILL-ME-IN
+    certbot_install_method: snap
+    certbot_create_method: standalone
+    certbot_certs:
+      - domains:
+          - "{{ headnode_public_hostname }}"
+    certbot_create_standalone_stop_services:
+      - httpd
+
+  roles:
+   - geerlingguy.certbot
+
+  pre_tasks:
+
+  - name: disable selinux
+    ansible.posix.selinux:
+      policy: targeted
+      state: permissive
+
+  - name: install httpd bits
+    dnf:
+      state: latest
+      name:
+        - nodejs
+        - npm
+        - httpd
+        - httpd-filesystem
+        - httpd-tools
+        - python3-certbot-apache
+        - snapd
+        - snap-confine
+        - snapd-selinux
+
+  - name: start and enable snapd
+    service: 
+      name: snapd
+      state: started
+      enabled: yes
+
+  - name: add http/s to firewalld
+    shell: firewall-cmd --add-service http --zone=public --permanent && \
+           firewall-cmd --add-service https --zone=public --permanent && \
+           firewall-cmd --reload
+
+  tasks:
+
+  - name: Get the headnode private IP
+    local_action:
+      module: shell ip addr | grep -Eo '10.0.0.[0-9]*' | head -1
+    register: headnode_private_ip
+
+  - name: Get the headnode hostname 
+    local_action:
+      module: shell hostname -s
+    register: headnode_hostname
+
+  - name: https redirect config
+    template:
+      src: jhub_files/https_redirect.conf.j2
+      dest: /etc/httpd/conf.d/https_redirect.conf
+      owner: root
+      mode: 0644
+
+  - name: jupyterhub proxy config
+    template:
+      src: jhub_files/jupyterhub.conf.j2
+      dest: /etc/httpd/conf.d/jupyterhub.conf
+      owner: root
+      mode: 0644
+
+  - name: restart httpd
+    service:
+      name: httpd
+      state: restarted
+      enabled: yes
+
+  - name: create a shadow group
+    group:
+      name: shadow
+      state: present
+
+  - name: let shadow group read /etc/shadow
+    file:
+      path: /etc/shadow
+      mode: 0040
+      group: shadow
+      owner: root
+
+  - name: create jupyterhub user and group
+    user:
+      name: jupyterhub
+      state: present
+      groups: shadow
+
+  - name: create jupyterhub-users group
+    group:
+      name: jupyterhub-users
+      state: present
+
+  - name: create sudoers directory
+    file:
+      path: /etc/sudoers.d
+      owner: root
+      group: root
+      mode: 0750
+      state: directory
+
+  - name: set sudoers permissions for jupyterhub non-root
+    copy:
+      src: jhub_files/jhub_sudoers
+      dest: /etc/sudoers.d/
+      owner: root
+      group: root
+      mode: 0440
+
+  - name: create jupyterhub config dir
+    file:
+      path: /etc/jupyterhub
+      owner: jupyterhub
+      group: jupyterhub
+      mode: 0755
+      state: directory
+
+  - name: install devel deps for building Python
+    dnf:
+      state: latest
+      name:
+        - bzip2-devel
+        - ncurses-devel
+        - gdbm-devel
+        - libsqlite3x-devel
+        - sqlite-devel
+        - libuuid-devel
+        - uuid-devel
+        - openssl-devel
+        - readline-devel
+        - zlib-devel
+        - libffi-devel
+        - xz-devel
+        - tk-devel
+
+  - name: install configurable-http-proxy
+    npm:
+      name: configurable-http-proxy
+      global: yes
+
+  - name: create tmp builddir
+    file:
+      path: /tmp/build/
+      state: directory
+
+  - name: fetch python source
+    unarchive:
+      src: https://www.python.org/ftp/python/3.8.10/Python-3.8.10.tgz
+      dest: /tmp/build/
+      remote_src: yes
+
+  - name: run python configure
+    command: 
+      cmd: ./configure --prefix=/opt/python3
+      chdir: /tmp/build/Python-3.8.10
+
+  - name: build python source
+    community.general.make:
+      target: all
+      chdir: /tmp/build/Python-3.8.10
+      
+  - name: install python
+    community.general.make:
+      target: install
+      chdir: /tmp/build/Python-3.8.10
+    become: yes
+
+  - name: run python configure for public build
+    command: 
+      cmd: ./configure --prefix=/opt/ohpc/pub/compiler/python3
+      chdir: /tmp/build/Python-3.8.10
+
+  - name: install python publicly
+    community.general.make:
+      target: install
+      chdir: /tmp/build/Python-3.8.10
+    become: yes
+
+  - name: install jupyterhub
+    pip: 
+      executable: /opt/python3/bin/pip3
+      name: jupyterhub 
+
+  - name: install wrapspawner
+    pip: 
+      executable: /opt/python3/bin/pip3
+      name: 
+        - wrapspawner
+        - traitlets<5
+
+  - name: install jupyterlab
+    pip:
+      executable: /opt/ohpc/pub/compiler/python3/bin/pip3
+      name: jupyterlab
+
+  - name: create jupyterhub service
+    template:
+      src: jhub_files/jhub_service.j2
+      dest: /etc/systemd/system/jupyterhub.service
+      mode: 0644
+      owner: root
+      group: root
+
+#This is hard b/c of Batchspawner config
+  - name: install base jupyterhub config
+    copy:
+      src: jhub_files/jhub_conf.py
+      dest: /etc/jupyterhub/jupyterhub_config.py
+      owner: jupyterhub
+      group: jupyterhub
+      mode: 0644
+
+  - name: set headnode ip in jhub_config
+    lineinfile:
+      regexp: JEC_HEADNODE_IP
+      line: "c.JupyterHub.hub_ip = \'{{ headnode_private_ip.stdout }}\' #JEC_HEADNODE_IP"
+      path: /etc/jupyterhub/jupyterhub_config.py
+
+  - name: set hostname in jhub_config for batchspawner
+    lineinfile:
+      regexp: JEC_SPAWNER_HOSTNAME
+      line: "c.BatchSpawnerBase.req_host = \'{{ headnode_hostname.stdout }}\' #JEC_SPAWNER_HOSTNAME "
+      path: /etc/jupyterhub/jupyterhub_config.py
+
+  - name: set hostname in jhub_config for batchspawner
+    lineinfile:
+      regexp: JEC_PUBLIC_HOSTNAME
+      line: "public_hostname = \'{{ headnode_public_hostname }}\' #JEC_PUBLIC_HOSTNAME"
+      path: /etc/jupyterhub/jupyterhub_config.py
+
+  - name: install batchspawner to jhub python
+    pip:
+      name: batchspawner
+      executable: /opt/python3/bin/pip3
+
+  - name: install batchspawner to public python
+    pip:
+      name: batchspawner
+      executable: /opt/ohpc/pub/compiler/python3/bin/pip3
+
+  - name: create python module dir
+    file:
+      state: directory
+      path: /opt/ohpc/pub/modulefiles/python3.8
+
+  - name: create python module
+    copy:
+      src: jhub_files/python_mod_3.8
+      dest: /opt/ohpc/pub/modulefiles/python3.8/3.8.10
+      mode: 0777
+      owner: root
+      group: root
+
+  - name: start the jupyterhub service
+    service:
+      name: jupyterhub
+      enabled: yes
+      state: started

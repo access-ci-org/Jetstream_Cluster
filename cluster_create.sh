@@ -12,11 +12,12 @@
 
 show_help() {
   echo "Options:
-        HEADNODE_NAME: required, name of the cluster
-        OPENRC_PATH: optional, path to a valid openrc file, default is ./openrc.sh
-        HEADNODE_SIZE: optional, size of the headnode in Openstack flavor (default: m1.small)
-        VOLUME_SIZE: optional, size of storage volume in GB, volume not created if 0
-        DOCKER_ALLOW: optional flag, leave docker installed on headnode if set.
+        -n: HEADNODE_NAME: required, name of the cluster
+        -o: OPENRC_PATH: optional, path to a valid openrc file, default is ./openrc.sh
+        -s: HEADNODE_SIZE: optional, size of the headnode in Openstack flavor (default: m1.small)
+        -v: VOLUME_SIZE: optional, size of storage volume in GB, volume not created if 0
+        -d: DOCKER_ALLOW: optional flag, leave docker installed on headnode if set.
+	-j: JUPYTERHUB_BUILD: optional flag, install jupyterhub with SSL certs.
   
 Usage: $0 -n [HEADNODE_NAME] -o [OPENRC_PATH] -v [VOLUME_SIZE] -s [HEADNODE_SIZE] [-d]"
 }
@@ -27,14 +28,16 @@ openrc_path="./openrc.sh"
 headnode_size="m1.small"
 headnode_name="noname"
 volume_size="0"
-docker_allow=0
+install_opts=""
 
-while getopts ":dhhelp:n:o:s:v:" opt; do
+while getopts ":jdhhelp:n:o:s:v:" opt; do
   case ${opt} in
     h|help|\?) show_help
       exit 0
       ;;
-    d) docker_allow=1
+    d) install_opts+="-d "
+      ;;
+    j) install_opts+="-j "
       ;;
     o) openrc_path=${OPTARG}
       ;;
@@ -123,6 +126,7 @@ OS_SUBNET_NAME=${OS_PREFIX}-elastic-subnet
 OS_ROUTER_NAME=${OS_PREFIX}-elastic-router
 OS_SSH_SECGROUP_NAME=${OS_PREFIX}-ssh-global
 OS_INTERNAL_SECGROUP_NAME=${OS_PREFIX}-internal
+OS_HTTP_S_SECGROUP_NAME=${OS_PREFIX}-http-s
 OS_KEYPAIR_NAME=${OS_USERNAME}-elastic-key
 OS_APP_CRED=${OS_PREFIX}-slurm-app-cred
 
@@ -157,6 +161,11 @@ if [[ ! ("${security_groups}" =~ "${OS_INTERNAL_SECGROUP_NAME}") ]]; then
   openstack security group create --description "internal group for cluster" ${OS_INTERNAL_SECGROUP_NAME}
   openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip ${SUBNET_PREFIX}.0/24 ${OS_INTERNAL_SECGROUP_NAME}
   openstack security group rule create --protocol icmp ${OS_INTERNAL_SECGROUP_NAME}
+fi
+if [[ (! ("${security_groups}" =~ "${OS_HTTP_S_SECGROUP_NAME}")) && "${install_opts}" =~ "j" ]]; then
+  openstack security group create --description "http/s for jupyterhub" ${OS_HTTP_S_SECGROUP_NAME}
+  openstack security group rule create --protocol tcp --dst-port 80 --remote-ip 0.0.0.0/0 ${OS_HTTP_S_SECGROUP_NAME}
+  openstack security group rule create --protocol tcp --dst-port 443 --remote-ip 0.0.0.0/0 ${OS_HTTP_S_SECGROUP_NAME}
 fi
 
 #Check if ${HOME}/.ssh/id_rsa.pub exists in JS
@@ -250,7 +259,7 @@ if [[ "${volume_size}" != "0" ]]; then
   openstack volume create --size ${volume_size} ${volume_name}
   openstack server add volume --device /dev/sdb ${headnode_name} ${volume_name}
   sleep 5 # To fix a wait issue in volume creation
-  ssh centos@${public_ip} 'sudo mkfs.xfs /dev/sdb && sudo mkdir -m 777 /export'
+  ssh -o StrictHostKeyChecking=no centos@${public_ip} 'sudo mkfs.xfs /dev/sdb && sudo mkdir -m 777 /export'
   vol_uuid=$(ssh centos@${public_ip} 'sudo blkid /dev/sdb | sed "s|.*UUID=\"\(.\{36\}\)\" .*|\1|"')
   echo "volume uuid is: ${vol_uuid}"
   ssh centos@${public_ip} "echo -e \"UUID=${vol_uuid} /export                 xfs     defaults        0 0\" | sudo tee -a /etc/fstab && sudo mount -a"
@@ -260,10 +269,20 @@ if [[ "${volume_size}" != "0" ]]; then
   fi
 
 fi
+
+if [[ "${install_opts}" =~ "-j" ]]; then
+  openstack server add security group ${headnode_name} ${OS_HTTP_S_SECGROUP_NAME}
+fi
   
 echo "Copied over VC files, beginning Slurm installation and Compute Image configuration - should take 8-10 minutes."
 
 #Since PWD on localhost has the full path, we only want the current directory name
-ssh centos@${public_ip} "cd ./${PWD##*/} && sudo ./install.sh"
+ssh -o StrictHostKeyChecking=no centos@${public_ip} "cd ./${PWD##*/} && sudo ./install.sh ${install_opts}"
 
 echo "You should be able to login to your headnode with your Jetstream key: ${OS_KEYPAIR_NAME}, at ${public_ip}"
+
+if [[ ${install_opts} =~ "-j" ]]; then
+  echo "You will need to edit the file ${PWD}/install_jupyterhub.yml to reflect the public hostname of your new cluster, and use your email for SSL certs."
+  echo "Then, run the following command from the directory ${PWD} ON THE NEW HEADNODE to complete your jupyterhub setup:"
+  echo "sudo ansible-playbook -v --ssh-common-args='-o StrictHostKeyChecking=no' install_jupyterhub.yml"
+fi
