@@ -1,4 +1,4 @@
-# Elastic Slurm Cluster in a Jetstream image
+# Elastic Slurm Cluster on the Jetstream Cloud
 
 ## Intro
 
@@ -7,10 +7,12 @@ cluster in an Openstack environment, specifically aimed at the XSEDE
 Jetstream resource.
 
 The basic structure is to have a single image act as headnode, with
-compute nodes managed by SLURM via the openstack API.
-The current plan for compute nodes is to
-use a basic CentOS 7 image, followed by an Ansible playbook to add 
-software, mounts, users, config files, etc. 
+compute nodes managed by SLURM via the openstack API. A customized 
+image is created for worker nodes, which contains configuration 
+and software specific to that cluster. The Slurm daemon on the
+headnode dynamically creates and destroys worker nodes in response to 
+jobs in the queue. The current version is based on CentOS 8, using
+RPMs from the [OpenHPC project](https://openhpc.community).
 
 ## Current Useage
 To build your own Virtual cluster, starting on your localhost:
@@ -20,7 +22,7 @@ To build your own Virtual cluster, starting on your localhost:
 
 1. Clone this repo.
 
-1. Copy the openrc for the allocation in which you'd like to create a 
+1. Know the path to an openrc file for the allocation in which you'd like to create a 
    virtual cluster to this repo. 
 
 1. If you'd like to modify your cluster, now is a good time!
@@ -44,28 +46,49 @@ To build your own Virtual cluster, starting on your localhost:
      (or ensure that they're available in the shared filesystem).
    * For other modifications, feel free to get in touch!
 
-1. Run ```headnode_create.sh``` - it *will* require an ssh key to exist in
+1. Run ```cluster_create.sh``` - it *will* require an ssh key to exist in
    ```${HOME}/.ssh/id_rsa.pub```. This will be the key used for your jetstream
    instance! If you prefer to use a different key, be sure to edit this
    script accordingly. The expected argument is only the headnode name, 
-   and will create an 'm1.small' instance for you.
+   and will create an 'm1.small' instance for you. The path the your openrc 
+   defaults to the same directory as the script.
 
-   ```./headnode_create.sh <headnode-name>```
+   ```./cluster_create.sh -n <headnode-name> -o <openrc-path>```
 
    Watch for the ip address of your new instance at the end of the script!
+   It is worth double-checking the output of the script to see that the ansible
+   playbook for compute image creation ran successfully - no failed tasks means
+   that the image for your compute nodes should be available.
+   If you would like to create a cluster with a shared volume (mounted 
+   on /export), you may use:
+
+   ```./cluster_create.sh -n <headnode-name> -v <volume-size-in-GB>```
+   
+   You may also create a larger headnode via the -s option, which takes sizes
+   based on the flavours used in your Openstack cloud - for example:
+
+   ```./cluster_create.sh -n <headnode-name> -s m2.xlarge```
+
 1. The headnode_create script has copied everything in this directory 
-   to your headnode. You should now be able to ssh in
+   to your headnode EXCEPT your local openrc file. You should now be able to ssh in
    as the centos user, with your default ssh key: 
    
    ```ssh centos@<new-headnode-ip>```
 
-1. Now, in the copied directory, *on the headnode*, run the install.sh script
-   with sudo:
+1. Your cluster is now up and running. You can submit jobs via sbatch or srun. If you
+   see issues with running jobs, there are useful logs in
+   ``` /var/log/slurm/slurm_elastic```
+   and
+   ``` /var/log/slurm/slurmctld.log```
+
+1. When you are done, you may destroy your cluster via:
+
+   ```./cluster_destroy.sh -n <headnode-name>```
    
-   ```sudo ./install.sh```. 
+   The optional -v flag will remove your shared volume if one was created- if you'd 
+   like to keep that data, do not run this with -v!
    
-   This script handles all the steps necessary to install slurm, with
-   elastic nodes set. 
+   
 
 Useage note:
 Slurm will run the suspend/resume scripts in response to 

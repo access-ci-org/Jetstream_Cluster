@@ -3,10 +3,16 @@
 source /etc/slurm/openrc.sh
 
 node_size="m1.small"
-node_image=$(openstack image list -f value | grep -i ${OS_USERNAME}-compute-image- | cut -f 2 -d' '| tail -n 1)
-key_name="${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key"
-network_name=${OS_USERNAME}-elastic-net
+# See compute_take_snapshot.sh for naming convention; backup snapshots exist with date appended
+#node_image=$(openstack image list -f value | grep -i $(hostname -s)-compute-image-latest | cut -f 2 -d' '| tail -n 1)
+node_image=$(hostname -s)-compute-image-latest
 log_loc=/var/log/slurm/slurm_elastic.log
+
+OS_PREFIX=$(hostname -s)
+OS_SLURM_KEYPAIR=${OS_PREFIX}-slurm-key
+OS_NETWORK_NAME=${OS_PREFIX}-elastic-net
+OS_SSH_SECGROUP_NAME=${OS_PREFIX}-ssh-global
+OS_INTERNAL_SECGROUP_NAME=${OS_PREFIX}-internal
 
 #def f'n to generate a write_files entry for cloud-config for copying over a file
 # arguments are owner path permissions file_to_be_copied
@@ -39,20 +45,27 @@ do
     openstack server create $host \
     --flavor $node_size \
     --image $node_image \
-    --key-name $key_name \
+    --key-name ${OS_SLURM_KEYPAIR} \
     --user-data <(echo -e "${user_data_long}") \
-    --security-group ${OS_USERNAME}-global-ssh --security-group ${OS_USERNAME}-cluster-internal \
-    --nic net-id=$network_name 2>&1 \
+    --security-group ${OS_SSH_SECGROUP_NAME} --security-group ${OS_INTERNAL_SECGROUP_NAME} \
+    --nic net-id=${OS_NETWORK_NAME} 2>&1 \
     | tee -a $log_loc | awk '/status/ {print $4}' >> $log_loc 2>&1;
 
   node_status="UNKOWN";
-  until [[ $node_status == "ACTIVE" ]]; do
+  stat_count=0
+  declare -i stat_count;
+  until [[ $node_status == "ACTIVE" || $stat_count -ge 20 ]]; do
     node_state=$(openstack server show $host 2>&1);
     node_status=$(echo -e "${node_state}" | awk '/status/ {print $4}');
 #    echo "$host status is: $node_status" >> $log_loc;
 #    echo "$host ip is: $node_ip" >> $log_loc;
+    stat_count+=1
     sleep 3;
   done;
+  if [[ $node_status != "ACTIVE" ]]; then
+     echo "$host creation failed" >> $log_loc;
+     exit 1;
+  fi;
   node_ip=$(echo -e "${node_state}" | awk '/addresses/ {print gensub(/^.*=/,"","g",$4)}');
 
   echo "$host ip is $node_ip" >> $log_loc;

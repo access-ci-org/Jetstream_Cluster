@@ -1,6 +1,20 @@
 #!/bin/bash
 
-if [[ ! -e ./openrc.sh ]]; then
+OPTIND=1
+
+docker_allow=0 #default to NOT installing docker; must be 0 or 1
+
+while getopts ":d" opt; do
+  case ${opt} in
+    d) docker_allow=1
+      ;;
+    \?) echo "BAD OPTION! $opt TRY AGAIN"
+      exit 1
+      ;;
+  esac
+done
+
+if [[ ! -e /etc/slurm/openrc.sh ]]; then
   echo "NO OPENRC FOUND! CREATE ONE, AND TRY AGAIN!"
   exit 1
 fi
@@ -11,28 +25,45 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 #do this early, allow the user to leave while the rest runs!
-source ./openrc.sh
+source /etc/slurm/openrc.sh
 
-yum -y install https://github.com/openhpc/ohpc/releases/download/v1.3.GA/ohpc-release-1.3-1.el7.x86_64.rpm \
-       centos-release-openstack-rocky
+OS_PREFIX=$(hostname -s)
+OS_SLURM_KEYPAIR=${OS_PREFIX}-slurm-key
 
-yum -y install \
+SUBNET_PREFIX=10.0.0
+
+#Open the firewall on the internal network for Cent8
+firewall-cmd --permanent --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
+firewall-cmd --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
+
+dnf -y install http://repos.openhpc.community/OpenHPC/2/CentOS_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm \
+       centos-release-openstack-train
+
+dnf config-manager --set-enabled powertools
+
+if [[ ${docker_allow} == 1 ]]; then
+  dnf config-manager --set-disabled docker-ce-stable
+  
+  dnf -y remove containerd.io.x86_64 docker-ce.x86_64 docker-ce-cli.x86_64 docker-ce-rootless-extras.x86_64
+fi
+
+dnf -y install \
         ohpc-slurm-server \
         vim \
         ansible \
         mailx \
         lmod-ohpc \
         bash-completion \
-        gnu-compilers-ohpc \
-        openmpi-gnu-ohpc \
+        gnu9-compilers-ohpc \
+        openmpi4-gnu9-ohpc \
         singularity-ohpc \
-        lmod-defaults-gnu-openmpi-ohpc \
+        lmod-defaults-gnu9-openmpi4-ohpc \
         moreutils \
         bind-utils \
-        python2-openstackclient \
-	python2-pexpect
+        python3-openstackclient \
+ 	python3-pexpect
 
-yum -y update  # until the base python2-openstackclient install works out of the box!
+dnf -y update  # until the base python2-openstackclient install works out of the box!
 
 #create user that can be used to submit jobs
 [ ! -d /home/gateway-user ] && useradd -m gateway-user
@@ -44,73 +75,25 @@ yum -y update  # until the base python2-openstackclient install works out of the
 
 
 #create clouds.yaml file from contents of openrc
-echo -e "clouds: 
+echo -e "clouds:
   tacc:
     auth:
-      username: ${OS_USERNAME}
-      auth_url: ${OS_AUTH_URL}
-      project_name: ${OS_PROJECT_NAME}
-      password: ${OS_PASSWORD}
-    user_domain_name: ${OS_USER_DOMAIN_NAME}
-    identity_api_version: 3" > clouds.yaml
+      auth_url: https://jblb.jetstream-cloud.org:35357/v3
+      application_credential_id: '${OS_APPLICATION_CREDENTIAL_ID}'
+      application_credential_secret: '${OS_APPLICATION_CREDENTIAL_SECRET}'
+    user_domain_name: tacc
+    identity_api_version: 3
+    project_domain_name: tacc
+    auth_type: 'v3applicationcredential'" > clouds.yaml
 
-# There are different versions of openrc floating around between the js wiki and auto-generated openrc files.
-if [[ -n ${OS_PROJECT_DOMAIN_NAME} ]]; then
-  echo -e "    project_domain_name: ${OS_PROJECT_DOMAIN_NAME}" >> clouds.yaml
-elif [[ -n ${OS_PROJECT_DOMAIN_ID} ]]; then
-  echo -e "    project_domain_id: ${OS_PROJECT_DOMAIN_ID}" >> clouds.yaml
-fi
+#Make sure only root can read this
+chmod 400 clouds.yaml
 
-# Defining a function here to check for quotas, and exit if this script will cause problems!
-# also, storing 'quotas' in a global var, so we're not calling it every single time
-quotas=$(openstack quota show)
-quota_check () 
-{
-quota_name=$1
-type_name=$2 #the name for a quota and the name for the thing itself are not the same
-number_created=$3 #number of the thing that we'll create here.
-
-current_num=$(openstack $type_name list -f value | wc -l)
-
-max_types=$(echo "$quotas" | awk -v quota=$quota_name '$0 ~ quota {print $4}')
-
-#echo "checking quota for $quota_name of $type_name to create $number_created - want $current_num to be less than $max_types"
-
-if [[ "$current_num" -lt "$((max_types + number_created))" ]]; then 
-  return 0
-fi
-return 1
-}
-
-#quota_check "key-pairs" "keypair" 1
-security_groups=$(openstack security group list -f value)
-if [[ $(quota_check "secgroups" "security group" 2) ]]; then
-  if [[ ! ("$security_groups" =~ "global-ssh") && ("$security_groups" =~ "cluster-internal") ]]; then
-    echo "NOT ENOUGH SECURITY GROUPS REMAINING IN YOUR ALLOCATION! EITHER ASK FOR A QUOTA INCREASE, OR REMOVE SOME SECURITY GROUPS"
-    exit
-  fi
-fi
-
-#quota_check "instances" "server" 1
-
-if [[ -n $(openstack keypair list | grep ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key) ]]; then
-  openstack keypair delete ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key
-  openstack keypair create --public-key slurm-key.pub ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key
+if [[ -n $(openstack keypair list | grep ${OS_SLURM_KEYPAIR}) ]]; then
+  openstack keypair delete ${OS_SLURM_KEYPAIR}
+  openstack keypair create --public-key slurm-key.pub ${OS_SLURM_KEYPAIR}
 else
-  openstack keypair create --public-key slurm-key.pub ${OS_USERNAME}-${OS_PROJECT_NAME}-slurm-key
-fi
-
-#make sure security groups exist... this could cause issues.
-if [[ ! ("$security_groups" =~ "global-ssh") ]]; then
-  openstack security group create --description "ssh \& icmp enabled" ${OS_USERNAME}-global-ssh
-  openstack security group rule create --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0 ${OS_USERNAME}-global-ssh
-  openstack security group rule create --protocol icmp ${OS_USERNAME}-global-ssh
-fi
-if [[ ! ("$security_groups" =~ "cluster-internal") ]]; then
-  openstack security group create --description "internal 10.0.0.0/24 network allowed" ${OS_USERNAME}-cluster-internal
-  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip 10.0.0.0/24 ${OS_USERNAME}-cluster-internal
-  openstack security group rule create --protocol udp --dst-port 1:65535 --remote-ip 10.0.0.0/24 ${OS_USERNAME}-cluster-internal
-  openstack security group rule create --protocol icmp ${OS_USERNAME}-cluster-internal
+  openstack keypair create --public-key slurm-key.pub ${OS_SLURM_KEYPAIR}
 fi
 
 #TACC-specific changes:
@@ -125,9 +108,13 @@ fi
 #headnode_os_subnet=$(openstack server show $(hostname | cut -f 1 -d'.') | awk '/addresses/ {print $4}' | cut -f 1 -d'=')
 #sed -i "s/network_name=.*/network_name=$headnode_os_subnet/" ./slurm_resume.sh
 
-#Set compute node names to $OS_USERNAME-compute-
-sed -i "s/=compute-*/=${OS_USERNAME}-compute-/" ./slurm.conf
-sed -i "s/Host compute-*/Host ${OS_USERNAME}-compute-/" ./ssh.cfg
+#Set compute node names to $OS_PREFIX-compute-
+sed -i "s/=compute-*/=${OS_PREFIX}-compute-/" ./slurm.conf
+sed -i "s/Host compute-*/Host ${OS_PREFIX}-compute-/" ./ssh.cfg
+
+#set the subnet in ssh.cfg and compute_build_base_img.yml
+sed -i "s/Host 10.0.0.\*/Host ${SUBNET_PREFIX}.\*/" ./ssh.cfg
+sed -i "s/^\(.*\)10.0.0\(.*\)$/\1${SUBNET_PREFIX}\2/" ./compute_build_base_img.yml
 
 # Deal with files required by slurm - better way to encapsulate this section?
 
@@ -145,23 +132,34 @@ setfacl -m u:slurm:rwx /etc/
 
 chmod +t /etc
 
-#Possible to handle this at the cloud-init level? From a machine w/
-# pre-loaded openrc, possible via user-data and write_files, yes.
-echo -e "export OS_PROJECT_DOMAIN_NAME=tacc
-export OS_USER_DOMAIN_NAME=tacc
-export OS_PROJECT_NAME=${OS_PROJECT_NAME}
-export OS_USERNAME=${OS_USERNAME}
-export OS_PASSWORD=${OS_PASSWORD}
-export OS_AUTH_URL=${OS_AUTH_URL}
-export OS_IDENTITY_API_VERSION=3" > /etc/slurm/openrc.sh
+#The following may be removed when appcred gen during cluster_create is working
+##Possible to handle this at the cloud-init level? From a machine w/
+## pre-loaded openrc, possible via user-data and write_files, yes.
+## This needs a check for success, and if not, fail?
+##export $(openstack application credential create -f shell ${OS_APP_CRED} | sed 's/^\(.*\)/OS_ac_\1/')
+##echo -e "export OS_AUTH_TYPE=v3applicationcredential
+##export OS_AUTH_URL=${OS_AUTH_URL}
+##export OS_IDENTITY_API_VERSION=3
+##export OS_REGION_NAME="RegionOne"
+##export OS_INTERFACE=public
+##export OS_APPLICATION_CREDENTIAL_ID=${OS_ac_id}
+##export OS_APPLICATION_CREDENTIAL_SECRET=${OS_ac_secret} > /etc/slurm/openrc.sh
+#
+#echo -e "export OS_PROJECT_DOMAIN_NAME=tacc
+#export OS_USER_DOMAIN_NAME=tacc
+#export OS_PROJECT_NAME=${OS_PROJECT_NAME}
+#export OS_USERNAME=${OS_USERNAME}
+#export OS_PASSWORD=${OS_PASSWORD}
+#export OS_AUTH_URL=${OS_AUTH_URL}
+#export OS_IDENTITY_API_VERSION=3" > /etc/slurm/openrc.sh
 
+#chown slurm:slurm /etc/slurm/openrc.sh
 
-chown slurm:slurm /etc/slurm/openrc.sh
-
-chmod 400 /etc/slurm/openrc.sh
+#chmod 400 /etc/slurm/openrc.sh
 
 cp prevent-updates.ci /etc/slurm/
 
+chown slurm:slurm /etc/slurm/openrc.sh
 chown slurm:slurm /etc/slurm/prevent-updates.ci
 
 mkdir -p /var/log/slurm
@@ -203,8 +201,8 @@ cp slurm_test.job ${HOME}
 mkdir -m 777 -p /export
 
 #create export of homedirs and /export and /opt/ohpc/pub
-echo -e "/home 10.0.0.0/24(rw,no_root_squash) \n/export 10.0.0.0/24(rw,no_root_squash)" > /etc/exports
-echo -e "/opt/ohpc/pub 10.0.0.0/24(rw,no_root_squash)" >> /etc/exports
+echo -e "/home ${SUBNET_PREFIX}.0/24(rw,no_root_squash) \n/export ${SUBNET_PREFIX}.0/24(rw,no_root_squash)" > /etc/exports
+echo -e "/opt/ohpc/pub ${SUBNET_PREFIX}.0/24(rw,no_root_squash)" >> /etc/exports
 
 #Get latest CentOS7 minimal image for base - if os_image_facts or the os API allowed for wildcards,
 #  this would be different. But this is the world we live in.
@@ -227,7 +225,7 @@ ansible-playbook -v --ssh-common-args='-o StrictHostKeyChecking=no' compute_buil
 rm -r /tmp/.ansible
 
 #Start required services
-systemctl enable slurmctld munge nfs-server nfs-lock nfs rpcbind nfs-idmap
-systemctl start munge slurmctld nfs-server nfs-lock nfs rpcbind nfs-idmap
+systemctl enable slurmctld munge nfs-server rpcbind 
+systemctl restart munge slurmctld nfs-server rpcbind 
 
 echo -e "If you wish to enable an email when node state is drain or down, please uncomment \nthe cron-node-check.sh job in /etc/crontab, and place your email of choice in the 'email_addr' variable \nat the beginning of /usr/local/sbin/cron-node-check.sh"
