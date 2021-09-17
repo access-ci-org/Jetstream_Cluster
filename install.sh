@@ -4,12 +4,15 @@ OPTIND=1
 
 docker_allow=0 #default to NOT installing docker; must be 0 or 1
 jhub_build=0 #default to NOT installing jupyterhub; must be 0 or 1
+vnc_build=0 #default to NOT installing vnc pieces; must be 0 or 1
 
-while getopts ":jd" opt; do
+while getopts ":jdv" opt; do
   case ${opt} in
     d) docker_allow=1
       ;;
     j) jhub_build=1
+      ;;
+    v) vnc_build=1
       ;;
     \?) echo "BAD OPTION! $opt TRY AGAIN"
       exit 1
@@ -219,6 +222,12 @@ echo -e "/opt/ohpc/pub ${SUBNET_PREFIX}.0/24(rw,no_root_squash)" >> /etc/exports
 echo "#!/bin/bash" > /tmp/add_users.sh
 cat /etc/passwd | awk -F':' '$4 >= 1001 && $4 < 65000 {print "useradd -M -u", $3, $1}' >> /tmp/add_users.sh
 
+if [[ ${vnc_build} == 1 ]]; then
+  mkdir -m 755 -p /opt/ohpc/pub/apps
+  cp general_vnc.sh /opt/ohpc/pub/apps/
+  sed -i 's/vnc_build: 0/vnc_build: 1/' compute_build_base_img.yml
+fi
+
 # build instance for compute base image generation, take snapshot, and destroy it
 echo "Creating compute image! based on $centos_base_image"
 
@@ -233,6 +242,7 @@ if [[ ${jhub_build} == 1 ]]; then
   ansible-galaxy install geerlingguy.certbot
 #  ansible-playbook -v --ssh-common-args='-o StrictHostKeyChecking=no' install_jupyterhub.yml
 fi
+
 
 #Start required services
 systemctl enable slurmctld munge nfs-server rpcbind 

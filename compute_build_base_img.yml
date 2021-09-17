@@ -9,6 +9,7 @@
     compute_base_size: "m1.small"
     network_name: "{{ ansible_facts.hostname }}-elastic-net"
     JS_ssh_keyname: "{{ ansible_facts.hostname }}-slurm-key"
+    vnc_build: 0
 
   vars_files:
     - clouds.yaml
@@ -63,6 +64,12 @@
       - "openmpi4-gnu9-ohpc"
       - "ohpc-slurm-client"
       - "lmod-ohpc"
+    vnc_package_list:
+      - "tigervnc-server"
+      - "python3-websockify"
+      - "@Xfce"
+      - "xterm"
+      - "bc"
     packages_to_remove:
       - "environment-modules"
       - "containerd.io.x86_64"
@@ -96,6 +103,13 @@
       state: present
       lock_timeout: 900
       disable_gpg_check: yes
+
+  - name: add Openstack repo for websockify
+    dnf:
+      name: "centos-release-openstack-train"
+      state: present
+      lock_timeout: 300
+    when: vnc_build == 1
 
   - name: Add CentOS 8.2.2004 vault repo
     blockinfile:
@@ -149,6 +163,13 @@
       name: "{{ compute_base_package_list }}" 
       state: present
       lock_timeout: 300
+
+  - name: install vnc packages
+    dnf: 
+      name: "{{ vnc_base_package_list }}" 
+      state: present
+      lock_timeout: 300
+    when: vnc_build == 1
 
   - name: fix slurm user uid
     user:
