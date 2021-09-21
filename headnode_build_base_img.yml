@@ -1,0 +1,188 @@
+---
+
+- hosts: localhost
+
+  vars:
+    compute_base_image: "JS-API-Featured-CentOS8-Latest"
+    sec_group_global: "{{ ansible_facts.hostname }}-ssh-global"
+    sec_group_internal: "{{ ansible_facts.hostname }}-internal"
+    headnode_base_size: "m1.small"
+    network_name: "{{ ansible_facts.hostname }}-elastic-net"
+    JS_ssh_keyname: "{{ ansible_facts.hostname }}-slurm-key"
+
+  vars_files:
+    - clouds.yaml
+
+  tasks:
+
+  - name: build headnode base instance 
+    os_server:
+      timeout: 300
+      state: present
+      name: "headnode-vc-base-instance"
+      cloud: "tacc"
+      image: "{{ compute_base_image }}"
+      key_name: "{{ JS_ssh_keyname }}"
+      security_groups: "{{ sec_group_global }},{{ sec_group_internal }}"
+      flavor: "{{ compute_base_size }}"
+      meta: { compute: "base" }
+      auto_ip: "no"
+      user_data: |
+        #cloud-config
+        packages: []
+        package_update: false
+        package_upgrade: false
+        package_reboot_if_required: false
+        final_message: "Boot completed in $UPTIME seconds"
+      network: "{{ network_name }}"
+      wait: yes
+    register: "os_host"
+
+  - debug:
+      var: os_host
+
+  - name: add headnode-build instance to inventory
+    add_host:
+      name: "{{ os_host['openstack']['name'] }}"
+      groups: "headnode-base"
+      ansible_host: "{{ os_host.openstack.private_v4 }}"
+
+  - name: pause for ssh to come up
+    pause:
+      seconds: 90
+
+
+- hosts: headnode-base
+
+  vars:
+    headnode_base_package_list:
+      - "ohpc-slurm-server"
+      - "vim"
+      - "ansible"
+      - "mailx"
+      - "lmod-ohpc"
+      - "bash-completion"
+      - "gnu9-compilers-ohpc"
+      - "openmpi4-gnu9-ohpc"
+      - "singularity-ohpc"
+      - "lmod-defaults-gnu9-openmpi4-ohpc"
+      - "moreutils"
+      - "bind-utils"
+      - "python3-openstackclient"
+      - "python3-pexpect"
+      - "python3-libselinux"
+      - "telnet"
+    packages_to_remove:
+      - "environment-modules"
+      - "containerd.io.x86_64"
+      - "docker-ce.x86_64"
+      - "docker-ce-cli.x86_64"
+      - "docker-ce-rootless-extras.x86_64"
+
+  tasks:
+
+  - name: Get the local node private IP
+    local_action:
+      module: shell ip addr | grep -Eo '10.0.0.[0-9]*' | head -1
+    register: local_private_ip
+    become: False # for running as slurm, since no sudo on localhost
+
+    #  - name: Get the slurmctld uid
+    #    local_action:
+    #      module: shell getent passwd slurm | awk -F':' '{print $3}'
+    #    register: headnode_slurm_uid
+    #    become: False # for running as slurm, since no sudo on localhost
+
+TODO: ADD THESE RULES
+    #firewall-cmd --permanent --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
+    #firewall-cmd --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
+    #
+  - name: Add OpenHPC 2.0 repo
+    dnf:
+      name: "http://repos.openhpc.community/OpenHPC/2/CentOS_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm"
+      state: present
+      lock_timeout: 900
+      disable_gpg_check: yes
+
+  - name: Enable CentOS PowerTools repo
+    command: dnf config-manager --set-enabled powertools
+
+  - name: Disable docker-ce repo
+    command: dnf config-manager --set-disabled docker-ce-stable
+      name: "docker-ce-stable"
+
+  - name: remove env-modules and docker packages
+    dnf:
+      name: "{{ packages_to_remove }}"
+      state: absent
+      lock_timeout: 300
+
+  - name: install basic packages
+    dnf: 
+      name: "{{ headnode_base_package_list }}" 
+      state: present
+      lock_timeout: 300
+
+  - name: disable selinux
+    selinux: state=permissive policy=targeted
+
+  - name: export /home to compute nodes
+    lineinfile:
+      dest: /etc/exports
+      line:  "/home  10.0.0.0\24(rw,no_root_squash)"
+      state: present
+
+  - name: export /opt/ohpc/pub to compute nodes
+    lineinfile:
+      dest: /etc/exports
+      line:  "/opt/ohpc/pub  10.0.0.0\24(rw,no_root_squash)"
+      state: present
+
+  - name: export /export to compute nodes
+    lineinfile:
+      dest: /etc/exports
+      line:  "/export  10.0.0.0\24(rw,no_root_squash)"
+      state: present
+
+  - name: ensure /opt/ohpc/pub exists
+    file: path=/opt/ohpc/pub state=directory mode=777 recurse=yes
+ 
+  - name: ensure /export exists
+    file: path=/export state=directory mode=777
+ 
+  - name: fix sda1 mount in fstab
+    lineinfile:
+      dest: /etc/fstab
+      regex: "/                       xfs     defaults"
+      line: "/dev/sda1           /                       xfs     defaults  0 0"
+      state: present
+ 
+  - name: enable munge
+    service: name=munge.service enabled=yes 
+ 
+  - name: enable slurmctld
+    service: name=slurmctld enabled=yes
+
+  - name: change slurmctld service "After" to sshd and remote filesystems
+    command: sed -i 's/network.target/sshd.service remote-fs.target/' /usr/lib/systemd/system/slurmctld.service
+
+  - name: add slurmctld service "Requires" of sshd and remote filesystems
+    command: sed -i '/After=network/aRequires=sshd.service remote-fs.target' /usr/lib/systemd/system/slurmctld.service
+
+- hosts: localhost
+
+  vars_files:
+    - clouds.yaml
+
+  tasks:
+
+  - name: create headnode instance snapshot
+    command: ./headnode_take_snapshot.sh
+      
+# os_server no longer handles instance state correctly
+#  - name: remove compute instance
+#    os_server:
+#      timeout: 200
+#      state: absent
+#      name: "compute-{{ inventory_hostname_short }}-base-instance"
+#      cloud: "tacc"
