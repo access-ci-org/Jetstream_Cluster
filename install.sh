@@ -68,15 +68,18 @@ dnf -y install \
 
 dnf -y update  # until the base python2-openstackclient install works out of the box!
 
+# This stuff should happen in cloud-init instead
 #create user that can be used to submit jobs
 [ ! -d /home/gateway-user ] && useradd -m gateway-user
 
 [ ! -f slurm-key ] && ssh-keygen -b 2048 -t rsa -P "" -f slurm-key
 
+#cloud-init
 # generate a local key for centos for after homedirs are mounted!
 [ ! -f /home/centos/.ssh/id_rsa ] && su centos - -c 'ssh-keygen -t rsa -b 2048 -P "" -f /home/centos/.ssh/id_rsa && cat /home/centos/.ssh/id_rsa.pub >> /home/centos/.ssh/authorized_keys'
 
 
+#cloud-init?
 #create clouds.yaml file from contents of openrc
 echo -e "clouds:
   tacc:
@@ -92,6 +95,7 @@ echo -e "clouds:
 #Make sure only root can read this
 chmod 400 clouds.yaml
 
+#cloud-init
 if [[ -n $(openstack keypair list | grep ${OS_SLURM_KEYPAIR}) ]]; then
   openstack keypair delete ${OS_SLURM_KEYPAIR}
   openstack keypair create --public-key slurm-key.pub ${OS_SLURM_KEYPAIR}
