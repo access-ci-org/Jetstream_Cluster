@@ -3,12 +3,13 @@
 - hosts: localhost
 
   vars:
-    compute_base_image: "JS-API-Featured-CentOS8-Latest"
+    base_image: "JS-API-Featured-CentOS8-Latest"
     sec_group_global: "{{ ansible_facts.hostname }}-ssh-global"
     sec_group_internal: "{{ ansible_facts.hostname }}-internal"
     headnode_base_size: "m1.small"
     network_name: "{{ ansible_facts.hostname }}-elastic-net"
-    JS_ssh_keyname: "{{ ansible_facts.hostname }}-slurm-key"
+    JS_ssh_keyname: "jecoulte-key"
+
 
   vars_files:
     - clouds.yaml
@@ -21,11 +22,11 @@
       state: present
       name: "headnode-vc-base-instance"
       cloud: "tacc"
-      image: "{{ compute_base_image }}"
+      image: "{{ base_image }}"
       key_name: "{{ JS_ssh_keyname }}"
       security_groups: "{{ sec_group_global }},{{ sec_group_internal }}"
-      flavor: "{{ compute_base_size }}"
-      meta: { compute: "base" }
+      flavor: "{{ headnode_base_size }}"
+      meta: { headnode: "base" }
       auto_ip: "no"
       user_data: |
         #cloud-config
@@ -55,6 +56,8 @@
 - hosts: headnode-base
 
   vars:
+    internal_subnet: "10.0.0.0/24"
+    docker_enable: True
     headnode_base_package_list:
       - "ohpc-slurm-server"
       - "vim"
@@ -74,6 +77,7 @@
       - "telnet"
     packages_to_remove:
       - "environment-modules"
+    docker_packages:
       - "containerd.io.x86_64"
       - "docker-ce.x86_64"
       - "docker-ce-cli.x86_64"
@@ -93,10 +97,12 @@
     #    register: headnode_slurm_uid
     #    become: False # for running as slurm, since no sudo on localhost
 
-TODO: ADD THESE RULES
-    #firewall-cmd --permanent --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
-    #firewall-cmd --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
-    #
+  - name: allow all internal network traffic
+    ansible.posix.firewalld:
+      rich_rule: "rule source address={{ internal_subnet }} family='ipv4' accept"
+      state: enabled
+      permanent: yes
+
   - name: Add OpenHPC 2.0 repo
     dnf:
       name: "http://repos.openhpc.community/OpenHPC/2/CentOS_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm"
@@ -104,18 +110,33 @@ TODO: ADD THESE RULES
       lock_timeout: 900
       disable_gpg_check: yes
 
+  - name: Add Openstack Train repo
+    dnf:
+      name: "centos-release-openstack-train"
+      state: present
+      lock_timeout: 30
+      disable_gpg_check: yes
+
   - name: Enable CentOS PowerTools repo
     command: dnf config-manager --set-enabled powertools
 
   - name: Disable docker-ce repo
     command: dnf config-manager --set-disabled docker-ce-stable
-      name: "docker-ce-stable"
+    when: docker_enable == False
 
-  - name: remove env-modules and docker packages
+  - name: remove env-modules 
     dnf:
       name: "{{ packages_to_remove }}"
       state: absent
       lock_timeout: 300
+    when: docker_enable == True
+
+  - name: remove env-modules and docker packages
+    dnf:
+      name: "{{ packages_to_remove | combine(docker_packages) }}"
+      state: absent
+      lock_timeout: 300
+    when: docker_enable == False
 
   - name: install basic packages
     dnf: 
@@ -129,19 +150,19 @@ TODO: ADD THESE RULES
   - name: export /home to compute nodes
     lineinfile:
       dest: /etc/exports
-      line:  "/home  10.0.0.0\24(rw,no_root_squash)"
+      line:  "/home  {{ internal_subnet }}(rw,no_root_squash)"
       state: present
 
   - name: export /opt/ohpc/pub to compute nodes
     lineinfile:
       dest: /etc/exports
-      line:  "/opt/ohpc/pub  10.0.0.0\24(rw,no_root_squash)"
+      line:  "/opt/ohpc/pub  {{ internal_subnet }}(rw,no_root_squash)"
       state: present
 
   - name: export /export to compute nodes
     lineinfile:
       dest: /etc/exports
-      line:  "/export  10.0.0.0\24(rw,no_root_squash)"
+      line:  "/export  {{ internal_subnet }}(rw,no_root_squash)"
       state: present
 
   - name: ensure /opt/ohpc/pub exists
@@ -156,6 +177,13 @@ TODO: ADD THESE RULES
       regex: "/                       xfs     defaults"
       line: "/dev/sda1           /                       xfs     defaults  0 0"
       state: present
+
+  - name: create /var/log/slurm
+    file: 
+      path: /var/log/slurm
+      state: directory
+      owner: slurm
+      group: slurm
  
   - name: enable munge
     service: name=munge.service enabled=yes 
@@ -167,7 +195,35 @@ TODO: ADD THESE RULES
     command: sed -i 's/network.target/sshd.service remote-fs.target/' /usr/lib/systemd/system/slurmctld.service
 
   - name: add slurmctld service "Requires" of sshd and remote filesystems
-    command: sed -i '/After=network/aRequires=sshd.service remote-fs.target' /usr/lib/systemd/system/slurmctld.service
+    command: sed -i '/After=network/Requires=sshd.service remote-fs.target' /usr/lib/systemd/system/slurmctld.service
+
+  - name: copy slurm scripts over
+    ansible.builtin.copy:
+      src: "{{ item.name }}"
+      dest: "{{ item.path }}"
+      owner: "{{ item.owner }}"
+      mode: "{{ item.mode |default('0644') }}"
+    loop:
+      - { name: slurm_resume.sh, path: /usr/local/sbin/, owner: slurm, mode: '0744' }
+      - { name: slurm_suspend.sh, path: /usr/local/sbin/, owner: slurm, mode: '0744' }
+      - { name: slurm_prolog.sh, path: /usr/local/sbin/, owner: slurm, mode: '0744' }
+      - { name: cron-node-check.sh, path: /usr/local/sbin/, owner: slurm, mode: '0744' }
+      - { name: slurm.conf, path: /etc/slurm/, owner: slurm }
+      - { name: prevent-updates.ci, path: /etc/slurm/, owner: slurm }
+      - { name: slurm-logrotate.conf, path: /etc/logrotate.d/slurm, owner: root }
+      - { name: ansible.cfg, path: /etc/ansible/, owner: root }
+      - { name: ssh.cfg, path: /etc/ansible/, owner: root }
+
+  - name: enable services
+    service:
+      name: "{{ item }}"
+      enabled: yes
+      state: restarted
+    loop:
+      - "munge"
+      - "slurmctld"
+      - "nfs-server"
+      - "rpcbind"
 
 - hosts: localhost
 
