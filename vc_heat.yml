@@ -1,0 +1,111 @@
+heat_template_version: rocky
+
+description: >
+  template to deploy a virtual cluster based on the slurm configuration 
+  at https://github.com/XSEDE/CRI_Jetstream_Cluster. This consists of a private
+  network and (default) m1.small headnode with slurmctld configured to allow 
+  for the elastic deployment of compute nodes based on the existence of waiting
+  jobs in the queue, up to a pre-configured maximum number of worker nodes.
+
+parameters:
+  ssh_key: 
+    type: string
+    label: SSH Key Name
+    description: Name of keypair to be used for the headnode instance
+  vol_size:
+    type: number
+    label: volume size
+    description: Size of volume in GB to be mounted across the VC
+    default: 50
+  instance_size:
+    type: string
+    label: Instance size
+    description: Size of instance (flavor) to be used
+    default: m1.small
+    constraints:
+      - allowed_values: [ m1.small, m1.quad, m1.medium, m1.large, m1.xlarge ]
+        description: > 
+          Value must be one of m1.small, m1.quad, m1.medium, m1.large or m1.xlarge.
+
+resources:
+#Network
+  vc_net:
+    type: OS::Neutron::Net
+#Subnet
+  vc_subnet: 
+    type: OS::Neutron::Subnet
+    properties: 
+      network_id: { get_resource: vc_net }
+      cidr: "10.0.0.0/24"
+      dns_nameservers: [ "129.79.1.1", "129.79.5.100"] 
+      ip_version: 4
+#Router
+  vc_router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info: { network: public }
+  vc_subnet_interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: vc_router }
+      subnet: { get_resource: vc_subnet }
+#Neutron Port
+  headnode_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_resource: vc_net }
+      fixed_ips:
+        - subnet_id: { get_resource: vc_subnet }
+#Security Group definitions
+  ssh_secgroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - protocol: tcp
+          remote_ip_prefix: 0.0.0.0/24
+          port_range_min: 22
+          port_range_max: 22
+  internal_secgroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - protocol: tcp
+          remote_ip_prefix: 10.0.0.0/24
+          port_range_min: 1
+          port_range_min: 65535
+#Instance definition
+  headnode:
+    type: OS::Nova::Server
+    properties:
+      key_name: { get_param: ssh_key }
+      image: TG-TRA160003-headnode-image-latest 
+      flavor: { get_param: instance_size }
+      networks:
+        - network: { get_resource: headnode_port }
+#Floating ip for the headnode
+  headnode_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: public
+#Now associate it with the Headnode
+  hn_ip_association:
+    type: OS::Neutron::FloatingIPAssociation
+    properties:
+      floatingip_id: { get_resource: headnode_ip }
+      port_id: { get_resource: headnode_port }
+#Add a volume
+  vc_volume:
+    type: OS::Cinder::Volume
+    properties:
+      size: { get_param: vol_size } 
+  vc_vol_attachment:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      volume_id: { get_resource: vc_volume }
+      instance_uuid: { get_resource: headnode }
+
+
+outputs:
+  headnode_ip:
+    description: The IP address of the new headnode
+    value: { get_attr: [headnode, first_address] }
