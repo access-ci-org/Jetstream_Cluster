@@ -8,7 +8,7 @@
     sec_group_internal: "{{ ansible_facts.hostname }}-internal"
     compute_base_size: "m1.small"
     network_name: "{{ ansible_facts.hostname }}-elastic-net"
-    JS_ssh_keyname: "{{ ansible_facts.hostname }}-slurm-key"
+    JS_ssh_keyname: "jecoulte-key"
 
   vars_files:
     - clouds.yaml
@@ -97,52 +97,52 @@
       lock_timeout: 900
       disable_gpg_check: yes
 
-  - name: Add CentOS 8.2.2004 vault repo
-    blockinfile:
-      path: /etc/yum.repos.d/CentOS-Vault.repo
-      create: yes
-      block: |
-        [vault-8.2-base]
-        name=CentOS Linux 8.2 - Vault - Base
-        mirrorlist=http://vault.centos.org/8.2.2004/BaseOS
-        baseurl=http://vault.centos.org/8.2.2004/BaseOS/$basearch/os/
-        gpgcheck=1
-        enabled=1
-        
-        [vault-8.2-updates]
-        name=CentOS Linux 8.2 - Vault - AppStream
-        mirrorlist=http://vault.centos.org/8.2.2004/AppStream
-        baseurl=http://vault.centos.org/8.2.2004/AppStream/$basearch/os/
-        gpgcheck=1
-        gpgcheck=1
-        enabled=1
-        
-        [vault-8.2-extra]
-        name=CentOS Linux 8.2 - Vault - Extras
-        mirrorlist=http://vault.centos.org/8.2.2004/extras
-        baseurl=http://vault.centos.org/8.2.2004/extras/$basearch/os/
-        gpgcheck=1
-        enabled=1
-        
-        [vault-8.2-PowerTools]
-        name=CentOS Linux 8.2 - Vault - PowerTools
-        mirrorlist=http://vault.centos.org/8.2.2004/PowerTools
-        baseurl=http://vault.centos.org/8.2.2004/PowerTools/$basearch/os/
-        gpgcheck=1
-        enabled=1
+      #  - name: Add CentOS 8.2.2004 vault repo
+      #    blockinfile:
+      #      path: /etc/yum.repos.d/CentOS-Vault.repo
+      #      create: yes
+      #      block: |
+      #        [vault-8.2-base]
+      #        name=CentOS Linux 8.2 - Vault - Base
+      #        mirrorlist=http://vault.centos.org/8.2.2004/BaseOS
+      #        baseurl=http://vault.centos.org/8.2.2004/BaseOS/$basearch/os/
+      #        gpgcheck=1
+      #        enabled=1
+      #        
+      #        [vault-8.2-updates]
+      #        name=CentOS Linux 8.2 - Vault - AppStream
+      #        mirrorlist=http://vault.centos.org/8.2.2004/AppStream
+      #        baseurl=http://vault.centos.org/8.2.2004/AppStream/$basearch/os/
+      #        gpgcheck=1
+      #        gpgcheck=1
+      #        enabled=1
+      #        
+      #        [vault-8.2-extra]
+      #        name=CentOS Linux 8.2 - Vault - Extras
+      #        mirrorlist=http://vault.centos.org/8.2.2004/extras
+      #        baseurl=http://vault.centos.org/8.2.2004/extras/$basearch/os/
+      #        gpgcheck=1
+      #        enabled=1
+      #        
+      #        [vault-8.2-PowerTools]
+      #        name=CentOS Linux 8.2 - Vault - PowerTools
+      #        mirrorlist=http://vault.centos.org/8.2.2004/PowerTools
+      #        baseurl=http://vault.centos.org/8.2.2004/PowerTools/$basearch/os/
+      #        gpgcheck=1
+      #        enabled=1
 
 
   - name: Enable CentOS PowerTools repo
     command: dnf config-manager --set-enabled powertools
 
-  - name: Disable docker-ce repo
-    command: dnf config-manager --set-disabled docker-ce-stable
-
-  - name: remove env-modules and docker packages
-    dnf:
-      name: "{{ packages_to_remove }}"
-      state: absent
-      lock_timeout: 300
+    #  - name: Disable docker-ce repo
+    #    command: dnf config-manager --set-disabled docker-ce-stable
+    #
+    #  - name: remove env-modules and docker packages
+    #    dnf:
+    #      name: "{{ packages_to_remove }}"
+    #      state: absent
+    #      lock_timeout: 300
 
   - name: install basic packages
     dnf: 
@@ -203,38 +203,40 @@
       regex: "/                       xfs     defaults"
       line: "/dev/sda1           /                       xfs     defaults  0 0"
       state: present
- 
-  - name: add local users to compute node
-    script: /tmp/add_users.sh
-    ignore_errors: True
 
-  - name: copy munge key from headnode
-    synchronize:
-      mode: push
-      src: /etc/munge/munge.key
-      dest: /etc/munge/munge.key
-      set_remote_user: no
-      use_ssh_args: yes
-
-  - name: fix perms on munge key
-    file: 
-      path: /etc/munge/munge.key
-      owner: munge
-      group: munge
-      mode: 0600
+      # This will be done via cloud-init 
+      #  - name: add local users to compute node
+      #    script: /tmp/add_users.sh
+      #    ignore_errors: True
+      # THIS MUST ALSO BE DONE VIA CLOUD-INIT cloud-init
+      #  - name: copy munge key from headnode
+      #    synchronize:
+      #      mode: push
+      #      src: /etc/munge/munge.key
+      #      dest: /etc/munge/munge.key
+      #      set_remote_user: no
+      #      use_ssh_args: yes
+      #
+      #  - name: fix perms on munge key
+      #    file: 
+      #      path: /etc/munge/munge.key
+      #      owner: munge
+      #      group: munge
+      #      mode: 0600
  
-  - name: copy slurm.conf from headnode
-    synchronize:
-      mode: push
-      src: /etc/slurm/slurm.conf
-      dest: /etc/slurm/slurm.conf
-      set_remote_user: no
-      use_ssh_args: yes
+      # This is done via cloud-init instead
+      #  - name: copy slurm.conf from headnode
+      #    synchronize:
+      #      mode: push
+      #      src: /etc/slurm/slurm.conf
+      #      dest: /etc/slurm/slurm.conf
+      #      set_remote_user: no
+      #      use_ssh_args: yes
  
-  - name: copy slurm_prolog.sh from headnode
+  - name: copy slurm_prolog.sh 
     synchronize:
       mode: push
-      src: /usr/local/sbin/slurm_prolog.sh
+      src: ./slurm_prolog.sh
       dest: /usr/local/sbin/slurm_prolog.sh
       set_remote_user: no
       use_ssh_args: yes

@@ -1,9 +1,9 @@
 #!/bin/bash
 
-source /etc/slurm/openrc.sh
+source ./openrc-staff.sh
 
-compute_image="$(hostname -s)-compute-image-latest"
-compute_instance="compute-$(hostname -s)-base-instance"
+compute_image="${OS_PROJECT_NAME}-vc-compute-image-latest"
+compute_instance="compute-jec-test-base-instance"
 
 openstack server stop ${compute_instance}
 
