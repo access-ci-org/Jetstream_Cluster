@@ -51,7 +51,9 @@ To build your own Virtual cluster, starting on your localhost:
    instance! If you prefer to use a different key, be sure to edit this
    script accordingly. The expected argument is only the headnode name, 
    and will create an 'm1.small' instance for you. The path the your openrc 
-   defaults to the same directory as the script.
+   defaults to the same directory as the script. *WARNING: Openstack may replace 
+   underscores in the <headnode-name> with dashes, causing various failures later on.*
+   
 
    ```./cluster_create.sh -n <headnode-name> -o <openrc-path>```
 
