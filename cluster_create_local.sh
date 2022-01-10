@@ -188,32 +188,7 @@ fi
 #centos_base_image=$(openstack image list --status active | grep -iE "API-Featured-centos7-[[:alpha:]]{3,4}-[0-9]{2}-[0-9]{4}" | awk '{print $4}' | tail -n 1)
 centos_base_image="JS-API-Featured-CentOS8-Latest"
 
-#Now, generate an Openstack Application Credential for use on the cluster
-export $(openstack application credential create -f shell ${OS_APP_CRED} | sed 's/^\(.*\)/OS_ac_\1/')
-
-#Write it to a temporary file
-echo -e "export OS_AUTH_TYPE=v3applicationcredential
-export OS_AUTH_URL=${OS_AUTH_URL}
-export OS_IDENTITY_API_VERSION=3
-export OS_REGION_NAME="RegionOne"
-export OS_INTERFACE=public
-export OS_APPLICATION_CREDENTIAL_ID=${OS_ac_id}
-export OS_APPLICATION_CREDENTIAL_SECRET=${OS_ac_secret}" > ./openrc-app.sh
-
-#Function to generate file: sections for cloud-init config files
-# arguments are owner path permissions file_to_be_copied
-# All calls to this must come after an "echo "write_files:\n"
-generate_write_files () {
-#This is generating YAML, so... spaces are important.
-echo -e "  - encoding: b64\n    owner: $1\n    path: $2\n    permissions: $3\n    content: |\n$(cat $4 | base64 | sed 's/^/      /')"
-}
-
-user_data="$(cat ./prevent-updates.ci)\n"
-user_data+="$(echo -e "write_files:")\n"
-user_data+="$(generate_write_files "slurm" "/etc/slurm/openrc.sh" "0400" "./openrc-app.sh")\n"
-
-#Clean up!
-rm ./openrc-app.sh
+cp "${openrc_path}" /etc/slurm/openrc.sh
 
 echo -e "openstack server create\
         --user-data <(echo -e "${user_data}") \
