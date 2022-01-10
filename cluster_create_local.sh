@@ -72,9 +72,6 @@ elif [[ -n "$(echo ${volume_size} | tr -d [0-9])" ]]; then
 elif [[ ${headnode_name} == "noname" ]]; then
   echo "No headnode name provided with -n, exiting!"
   exit 1
-elif [[ -n $(openstack server list | grep -i ${headnode_name}) ]]; then
-  echo "Cluster name [${headnode_name}] conficts with existing Openstack entity!" 
-  exit 1
 elif [[ -n $(openstack volume list | grep -i ${headnode_name}-storage) ]]; then
   echo "Volume name [${headnode_name}-storage] conficts with existing Openstack entity!" 
   exit 1
