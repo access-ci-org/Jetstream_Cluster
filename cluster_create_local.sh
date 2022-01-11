@@ -171,9 +171,6 @@ else
   openstack keypair create --public-key ${HOME}/.ssh/id_rsa.pub ${OS_KEYPAIR_NAME}
 fi
 
-sudo mkdir -p /etc/slurm
-sudo cp "${openrc_path}" /etc/slurm/openrc.sh
-
 SERVER_UUID=$(curl http://169.254.169.254/openstack/latest/meta_data.json | jq '.uuid')
 
 echo -e "openstack server add network ${SERVER_UUID} ${OS_NETWORK_NAME}"
@@ -223,8 +220,9 @@ fi
   
 echo "Copied over VC files, beginning Slurm installation and Compute Image configuration - should take 8-10 minutes."
 
-#Since PWD on localhost has the full path, we only want the current directory name
-ssh -o StrictHostKeyChecking=no centos@${public_ip} "cd ./${PWD##*/} && sudo ./install.sh ${install_opts}"
+sudo mkdir -p /etc/slurm
+sudo cp "${openrc_path}" /etc/slurm/openrc.sh
+sudo chmod 400 /etc/slurm/openrc.sh
 
 echo "You should be able to login to your headnode with your Jetstream key: ${OS_KEYPAIR_NAME}, at ${public_ip}"
 
