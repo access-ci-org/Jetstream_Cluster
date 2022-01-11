@@ -185,7 +185,7 @@ openstack server add security group ${SERVER_UUID} ${OS_INTERNAL_SECGROUP_NAME}
 if [[ "${volume_size}" != "0" ]]; then
   echo "Creating volume ${volume_name} of ${volume_size} GB"
   openstack volume create --size ${volume_size} ${volume_name}
-  openstack server add volume --device /dev/sdb ${headnode_name} ${volume_name}
+  openstack server add volume --device /dev/sdb ${SERVER_UUID} ${volume_name}
   sleep 5 # To fix a wait issue in volume creation
   sudo mkfs.xfs /dev/sdb && sudo mkdir -m 777 /export
   vol_uuid=$(sudo blkid /dev/sdb | sed "s|.*UUID=\"\(.\{36\}\)\" .*|\1|")
@@ -199,7 +199,7 @@ if [[ "${volume_size}" != "0" ]]; then
 fi
 
 if [[ "${install_opts}" =~ "-j" ]]; then
-  openstack server add security group ${headnode_name} ${OS_HTTP_S_SECGROUP_NAME}
+  openstack server add security group ${SERVER_UUID} ${OS_HTTP_S_SECGROUP_NAME}
 fi
   
 echo "Beginning Slurm installation and Compute Image configuration - should take 8-10 minutes."
