@@ -185,7 +185,8 @@ else
   openstack keypair create --public-key ${HOME}/.ssh/id_rsa.pub ${OS_KEYPAIR_NAME}
 fi
 
-cp "${openrc_path}" /etc/slurm/openrc.sh
+sudo mkdir -p /etc/slurm
+sudo cp "${openrc_path}" /etc/slurm/openrc.sh
 
 SERVER_UUID=$(curl http://169.254.169.254/openstack/latest/meta_data.json | jq '.uuid')
 
