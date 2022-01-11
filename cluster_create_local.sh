@@ -176,14 +176,24 @@ fi
 
 SERVER_UUID=$(curl http://169.254.169.254/openstack/latest/meta_data.json | jq '.uuid' | sed -e 's#"##g')
 
-echo -e "openstack server add network ${SERVER_UUID} ${OS_NETWORK_NAME}"
-openstack server add network ${SERVER_UUID} ${OS_NETWORK_NAME}
+server_networks=$(openstack server show -f value -c addresses ${SERVER_UUID})
 
-echo -e "openstack server add security group ${SERVER_UUID} ${OS_SSH_SECGROUP_NAME}"
-openstack server add security group ${SERVER_UUID} ${OS_SSH_SECGROUP_NAME}
+if [[ ! ("${server_networks}" =~ "${OS_NETWORK_NAME}") ]]; then
+  echo -e "openstack server add network ${SERVER_UUID} ${OS_NETWORK_NAME}"
+  openstack server add network ${SERVER_UUID} ${OS_NETWORK_NAME}
+fi
 
-echo -e "openstack server add security group ${SERVER_UUID} ${OS_INTERNAL_SECGROUP_NAME}"
-openstack server add security group ${SERVER_UUID} ${OS_INTERNAL_SECGROUP_NAME}
+server_security_groups=$(openstack server show -f value -c security_groups ${SERVER_UUID} | sed -e "s#name=##" -e "s#'##g" | paste -s -)
+
+if [[ ! ("${server_security_groups}" =~ "${OS_SSH_SECGROUP_NAMEOS_SSH_SECGROUP_NAME}") ]]; then
+  echo -e "openstack server add security group ${SERVER_UUID} ${OS_SSH_SECGROUP_NAME}"
+  openstack server add security group ${SERVER_UUID} ${OS_SSH_SECGROUP_NAME}
+fi
+
+if [[ ! ("${server_security_groups}" =~ "${OS_INTERNAL_SECGROUP_NAME}") ]]; then
+  echo -e "openstack server add security group ${SERVER_UUID} ${OS_INTERNAL_SECGROUP_NAME}"
+  openstack server add security group ${SERVER_UUID} ${OS_INTERNAL_SECGROUP_NAME}
+fi
 
 if [[ "${volume_size}" != "0" ]]; then
   echo "Creating volume ${volume_name} of ${volume_size} GB"
@@ -201,7 +211,7 @@ if [[ "${volume_size}" != "0" ]]; then
 
 fi
 
-if [[ "${install_opts}" =~ "-j" ]]; then
+if [[ (! ("${server_security_groups}" =~ "${OS_HTTP_S_SECGROUP_NAME}")) && "${install_opts}" =~ "-j" ]]; then
   openstack server add security group ${SERVER_UUID} ${OS_HTTP_S_SECGROUP_NAME}
 fi
   
