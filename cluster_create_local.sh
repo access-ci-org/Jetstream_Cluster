@@ -174,7 +174,7 @@ else
   openstack keypair create --public-key ${HOME}/.ssh/id_rsa.pub ${OS_KEYPAIR_NAME}
 fi
 
-SERVER_UUID=$(curl http://169.254.169.254/openstack/latest/meta_data.json | jq '.uuid')
+SERVER_UUID=$(curl http://169.254.169.254/openstack/latest/meta_data.json | jq '.uuid' | sed -e 's#"##g')
 
 echo -e "openstack server add network ${SERVER_UUID} ${OS_NETWORK_NAME}"
 openstack server add network ${SERVER_UUID} ${OS_NETWORK_NAME}
