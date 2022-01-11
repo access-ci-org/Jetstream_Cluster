@@ -6,27 +6,21 @@
 # 3. The user knows what they're doing.
 # 4. Take some options: 
 #    openrc file 
-#    headnode size 
-#    cluster name 
 #    volume size
 
 show_help() {
   echo "Options:
-        -n: HEADNODE_NAME: required, name of the cluster
-        -o: OPENRC_PATH: optional, path to a valid openrc file, default is ./openrc.sh
-        -s: HEADNODE_SIZE: optional, size of the headnode in Openstack flavor (default: m1.small)
+        -o: OPENRC_PATH: optional, path to a valid openrc file, default is ~/openrc.sh
         -v: VOLUME_SIZE: optional, size of storage volume in GB, volume not created if 0
         -d: DOCKER_ALLOW: optional flag, leave docker installed on headnode if set.
 	-j: JUPYTERHUB_BUILD: optional flag, install jupyterhub with SSL certs.
   
-Usage: $0 -n [HEADNODE_NAME] -o [OPENRC_PATH] -v [VOLUME_SIZE] -s [HEADNODE_SIZE] [-d]"
+Usage: $0 -o [OPENRC_PATH] -v [VOLUME_SIZE] [-d]"
 }
 
 OPTIND=1
 
-openrc_path="./openrc.sh"
-headnode_size="m1.small"
-headnode_name="noname"
+openrc_path="${HOME}/openrc.sh"
 volume_size="0"
 install_opts=""
 
@@ -41,11 +35,7 @@ while getopts ":jdhhelp:n:o:s:v:" opt; do
       ;;
     o) openrc_path=${OPTARG}
       ;;
-    s) headnode_size=${OPTARG}
-      ;;
     v) volume_size=${OPTARG}
-      ;;
-    n) headnode_name=${OPTARG}
       ;;
     :) echo "Option -$OPTARG requires an argument."
       exit 1
@@ -60,17 +50,13 @@ if [[ ! -f ${openrc_path} ]]; then
   exit 1
 fi
 
+headnode_name="$(hostname --short)"
+
 #Move this to allow for error checking of OS conflicts
 source ${openrc_path}
 
-if [[ -z $( echo ${headnode_size} | grep -E '^m1|^m2|^g1|^g2' ) ]]; then
-  echo "Headnode size ${headnode_size} is not a valid JS instance size!"
-  exit 1
 elif [[ -n "$(echo ${volume_size} | tr -d [0-9])" ]]; then
   echo "Volume size must be numeric only, in units of GB."
-  exit 1
-elif [[ ${headnode_name} == "noname" ]]; then
-  echo "No headnode name provided with -n, exiting!"
   exit 1
 elif [[ -n $(openstack volume list | grep -i ${headnode_name}-storage) ]]; then
   echo "Volume name [${headnode_name}-storage] conficts with existing Openstack entity!" 
