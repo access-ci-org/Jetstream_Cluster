@@ -66,9 +66,7 @@ elif [[ -n $(openstack volume list | grep -i ${headnode_name}-storage) ]]; then
 fi
 
 if [[ ! -e ${HOME}/.ssh/id_rsa.pub ]]; then
-#This may be temporary... but seems fairly reasonable.
-  echo "NO KEY FOUND IN ${HOME}/.ssh/id_rsa.pub! - please create one and re-run!"  
-  exit
+  ssh-keygen -q -N "" -f ${HOME}/.ssh/id_rsa
 fi
 
 volume_name="${headnode_name}-storage"
