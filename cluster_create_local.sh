@@ -57,7 +57,7 @@ headnode_name="$(hostname --short)"
 #Move this to allow for error checking of OS conflicts
 source ${openrc_path}
 
-elif [[ -n "$(echo ${volume_size} | tr -d [0-9])" ]]; then
+if [[ -n "$(echo ${volume_size} | tr -d [0-9])" ]]; then
   echo "Volume size must be numeric only, in units of GB."
   exit 1
 elif [[ -n $(openstack volume list | grep -i ${headnode_name}-storage) ]]; then
