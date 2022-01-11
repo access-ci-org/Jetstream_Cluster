@@ -221,7 +221,7 @@ sudo mkdir -p /etc/slurm
 sudo cp "${openrc_path}" /etc/slurm/openrc.sh
 sudo chmod 400 /etc/slurm/openrc.sh
 
-sudo ./install.sh ${install_opts}
+sudo ./install_local.sh ${install_opts}
 
 if [[ ${install_opts} =~ "-j" ]]; then
   echo "You will need to edit the file ${PWD}/install_jupyterhub.yml to reflect the public hostname of your new cluster, and use your email for SSL certs."

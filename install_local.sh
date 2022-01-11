@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 OPTIND=1
 
 docker_allow=0 #default to NOT installing docker; must be 0 or 1
