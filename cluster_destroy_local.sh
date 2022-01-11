@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -x
-set -e
 
 #This script makes several assumptions:
 # 1. Running on a host with openstack client tools installed
