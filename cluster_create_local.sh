@@ -44,6 +44,8 @@ while getopts ":jdhhelp:n:o:s:v:" opt; do
   esac
 done
 
+sudo dnf -y install centos-release-openstack-train
+sudo dnf -y install python3-openstackclient
 
 if [[ ! -f ${openrc_path} ]]; then
   echo "openrc path: ${openrc_path} \n does not point to a file!"
