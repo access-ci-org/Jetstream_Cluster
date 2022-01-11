@@ -1,6 +1,5 @@
 #!/bin/bash
 
-set -e
 set -x
 
 #This script makes several assumptions:
