@@ -60,6 +60,7 @@ OS_PREFIX=${headnode_name}
 OS_SSH_SECGROUP_NAME=${OS_PREFIX}-ssh-global
 OS_INTERNAL_SECGROUP_NAME=${OS_PREFIX}-internal
 OS_SLURM_KEYPAIR=${OS_PREFIX}-slurm-key
+OS_KEYPAIR_NAME=${OS_PREFIX}-elastic-key
 OS_ROUTER_NAME=${OS_PREFIX}-elastic-router
 OS_SUBNET_NAME=${OS_PREFIX}-elastic-subnet
 OS_NETWORK_NAME=${OS_PREFIX}-elastic-net
@@ -83,7 +84,9 @@ openstack server remove network ${SERVER_UUID} ${OS_NETWORK_NAME}
 
 openstack security group delete ${OS_SSH_SECGROUP_NAME}
 openstack security group delete ${OS_INTERNAL_SECGROUP_NAME}
-openstack keypair delete ${OS_SLURM_KEYPAIR} # We don't delete the elastic-key, since it could be a user's key used for other stuff
+openstack keypair delete ${OS_SLURM_KEYPAIR}
+# We DO delete the elastic-key, since we created it from scratch before
+openstack keypair delete ${OS_KEYPAIR_NAME}
 openstack router unset --external-gateway ${OS_ROUTER_NAME}
 openstack router remove subnet ${OS_ROUTER_NAME} ${OS_SUBNET_NAME}
 openstack router delete ${OS_ROUTER_NAME}
