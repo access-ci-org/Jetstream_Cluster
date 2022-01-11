@@ -185,30 +185,18 @@ else
   openstack keypair create --public-key ${HOME}/.ssh/id_rsa.pub ${OS_KEYPAIR_NAME}
 fi
 
-#centos_base_image=$(openstack image list --status active | grep -iE "API-Featured-centos7-[[:alpha:]]{3,4}-[0-9]{2}-[0-9]{4}" | awk '{print $4}' | tail -n 1)
-centos_base_image="JS-API-Featured-CentOS8-Latest"
-
 cp "${openrc_path}" /etc/slurm/openrc.sh
 
-echo -e "openstack server create\
-        --user-data <(echo -e "${user_data}") \
-        --flavor ${headnode_size} \
-        --image ${centos_base_image} \
-        --key-name ${OS_KEYPAIR_NAME} \
-        --security-group ${OS_SSH_SECGROUP_NAME} \
-        --security-group ${OS_INTERNAL_SECGROUP_NAME} \
-        --nic net-id=${OS_NETWORK_NAME} \
-        ${headnode_name}"
+SERVER_UUID=$(curl http://169.254.169.254/openstack/latest/meta_data.json | jq '.uuid')
 
-openstack server create \
-        --user-data <(echo -e "${user_data}") \
-        --flavor ${headnode_size} \
-        --image ${centos_base_image} \
-        --key-name ${OS_KEYPAIR_NAME} \
-        --security-group ${OS_SSH_SECGROUP_NAME} \
-        --security-group ${OS_INTERNAL_SECGROUP_NAME} \
-        --nic net-id=${OS_NETWORK_NAME} \
-        ${headnode_name}
+echo -e "openstack server add network ${SERVER_UUID} ${OS_NETWORK_NAME}"
+openstack server add network ${SERVER_UUID} ${OS_NETWORK_NAME}
+
+echo -e "openstack server add security group ${SERVER_UUID} ${OS_SSH_SECGROUP_NAME}"
+openstack server add security group ${SERVER_UUID} ${OS_SSH_SECGROUP_NAME}
+
+echo -e "openstack server add security group ${SERVER_UUID} ${OS_INTERNAL_SECGROUP_NAME}"
+openstack server add security group ${SERVER_UUID} ${OS_INTERNAL_SECGROUP_NAME}
 
 public_ip=$(openstack floating ip create public | awk '/floating_ip_address/ {print $4}')
 #For some reason there's a time issue here - adding a sleep command to allow network to become ready
