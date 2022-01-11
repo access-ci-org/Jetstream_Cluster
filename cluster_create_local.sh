@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -e
+set -x
+
 #This script makes several assumptions:
 # 1. Running on a host with openstack client tools installed
 # 2. Using a default ssh key in ~/.ssh/
