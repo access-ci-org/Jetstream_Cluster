@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 OPTIND=1
 
 docker_allow=0 #default to NOT installing docker; must be 0 or 1
@@ -36,8 +38,9 @@ OS_SLURM_KEYPAIR=${OS_PREFIX}-slurm-key
 SUBNET_PREFIX=10.0.0
 
 #Open the firewall on the internal network for Cent8
-firewall-cmd --permanent --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
-firewall-cmd --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
+# TODO: Re-enable?
+#firewall-cmd --permanent --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
+#firewall-cmd --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
 
 dnf -y install http://repos.openhpc.community/OpenHPC/2/CentOS_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm \
        centos-release-openstack-train

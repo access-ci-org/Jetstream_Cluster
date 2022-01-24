@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 source /etc/slurm/openrc.sh
 
 compute_image="$(hostname -s)-compute-image-latest"
