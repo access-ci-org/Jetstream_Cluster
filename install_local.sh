@@ -38,9 +38,8 @@ OS_SLURM_KEYPAIR=${OS_PREFIX}-slurm-key
 SUBNET_PREFIX=10.0.0
 
 #Open the firewall on the internal network for Cent8
-# TODO: Re-enable?
-#firewall-cmd --permanent --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
-#firewall-cmd --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
+firewall-cmd --permanent --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
+firewall-cmd --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
 
 dnf -y install http://repos.openhpc.community/OpenHPC/2/CentOS_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm \
        centos-release-openstack-train
@@ -84,7 +83,7 @@ dnf -y update  # until the base python2-openstackclient install works out of the
 echo -e "clouds:
   tacc:
     auth:
-      auth_url: https://jblb.jetstream-cloud.org:35357/v3
+      auth_url: '${OS_AUTH_URL}'
       application_credential_id: '${OS_APPLICATION_CREDENTIAL_ID}'
       application_credential_secret: '${OS_APPLICATION_CREDENTIAL_SECRET}'
     user_domain_name: tacc
@@ -106,7 +105,7 @@ fi
 
 if [[ $OS_AUTH_URL =~ "tacc" ]]; then
   #Insert headnode into /etc/hosts
-  echo "$(ip add show dev eth0 | awk '/inet / {sub("/24","",$2); print $2}') $(hostname) $(hostname -s)" >> /etc/hosts
+  echo "$(ip addr | grep -Eo '10.0.0.[0-9]*' | head -1) $(hostname) $(hostname -s)" >> /etc/hosts
 fi
 
 #Get OS Network name of *this* server, and set as the network for compute-nodes
