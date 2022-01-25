@@ -83,7 +83,7 @@ dnf -y update  # until the base python2-openstackclient install works out of the
 echo -e "clouds:
   tacc:
     auth:
-      auth_url: https://jblb.jetstream-cloud.org:35357/v3
+      auth_url: '${OS_AUTH_URL}'
       application_credential_id: '${OS_APPLICATION_CREDENTIAL_ID}'
       application_credential_secret: '${OS_APPLICATION_CREDENTIAL_SECRET}'
     user_domain_name: tacc
