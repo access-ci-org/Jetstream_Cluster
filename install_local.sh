@@ -37,11 +37,11 @@ OS_SLURM_KEYPAIR=${OS_PREFIX}-slurm-key
 
 SUBNET_PREFIX=10.0.0
 
-echo "Firewalld status: $(firewall-cmd --state)"
-
-#Open the firewall on the internal network for Cent8
-firewall-cmd --permanent --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
-firewall-cmd --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
+#Open the firewall on the internal network for Cent8. Use offline tool as this runs as a cloud init script.
+# See the discussion : https://titanwolf.org/Network/Articles/Article?AID=ca474d74-d632-4b1e-9b03-cd10add19633
+firewall-offline-cmd --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
+systemctl enable firewalld
+systemctl restart firewalld
 
 dnf -y install http://repos.openhpc.community/OpenHPC/2/CentOS_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm \
        centos-release-openstack-train
