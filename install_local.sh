@@ -105,7 +105,7 @@ fi
 
 if [[ $OS_AUTH_URL =~ "tacc" ]]; then
   #Insert headnode into /etc/hosts
-  echo "$(ip add show dev eth0 | awk '/inet / {sub("/24","",$2); print $2}') $(hostname) $(hostname -s)" >> /etc/hosts
+  echo "$(ip addr | grep -Eo '10.0.0.[0-9]*' | head -1) $(hostname) $(hostname -s)" >> /etc/hosts
 fi
 
 #Get OS Network name of *this* server, and set as the network for compute-nodes
