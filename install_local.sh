@@ -37,6 +37,8 @@ OS_SLURM_KEYPAIR=${OS_PREFIX}-slurm-key
 
 SUBNET_PREFIX=10.0.0
 
+echo "Firewalld status: $(firewall-cmd --state)"
+
 #Open the firewall on the internal network for Cent8
 firewall-cmd --permanent --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
 firewall-cmd --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24" family='ipv4' accept"
