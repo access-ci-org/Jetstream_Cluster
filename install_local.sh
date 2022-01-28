@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set -x
+# Uncomment below to help with debugging
+# set -x
 
 OPTIND=1
 

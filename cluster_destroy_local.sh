@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set -x
+# Uncomment below to help with debugging
+# set -x
 
 #This script makes several assumptions:
 # 1. Running on a host with openstack client tools installed
