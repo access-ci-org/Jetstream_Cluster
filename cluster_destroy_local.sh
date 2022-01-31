@@ -14,11 +14,12 @@
 
 show_help() {
   echo "Options:
-        HEADNODE_NAME: required, name of the cluster to delete
-        OPENRC_PATH: optional, path to a valid openrc file, defaults to ~/openrc.sh
-        VOLUME_DELETE: optional flag, set to delete storage volumes, default false
+        -n: HEADNODE_NAME: required, name of the cluster to delete
+        -o: OPENRC_PATH: optional, path to a valid openrc file, defaults to ~/openrc.sh
+        -v: VOLUME_DELETE: optional flag, set to delete storage volumes, default false
+        -d: HEADNODE_DELETE: delete the headnode once the cluster is deleted
   
-Usage: $0 -n <HEADNODE_NAME> -o [OPENRC_PATH] [-v] "
+Usage: $0 -n <HEADNODE_NAME> -o [OPENRC_PATH] [-v] [-d]"
 }
 
 OPTIND=1
@@ -26,8 +27,9 @@ OPTIND=1
 openrc_path="${HOME}/openrc.sh"
 headnode_name="$(hostname --short)"
 volume_delete="0"
+headnode_delete="0"
 
-while getopts ":hhelp:o:n:v" opt; do
+while getopts ":hhelp:o:n:v:d" opt; do
   case ${opt} in
     h|help|\?) show_help
       exit 0
@@ -37,6 +39,8 @@ while getopts ":hhelp:o:n:v" opt; do
     n) headnode_name=${OPTARG}
       ;;
     v) volume_delete=1
+      ;;
+    d) headnode_delete=1
       ;;
     :) echo "Option -$OPTARG requires an argument."
       exit 1
@@ -51,6 +55,9 @@ if [[ ! -f ${openrc_path} ]]; then
   exit 1
 elif [[ "${volume_delete}" != "0" && "${volume_delete}" != "1" ]]; then
   echo "Volume_delete parameter must be 0 or 1 instead of ${volume_delete}"
+  exit 1
+elif [[ "${headnode_delete}" != "0" && "${headnode_delete}" != "1" ]]; then
+  echo "Headnode_delete parameter must be 0 or 1 instead of ${headnode_delete}"
   exit 1
 fi
 
@@ -99,3 +106,8 @@ for image in "${headnode_images}"
 do
   openstack image delete ${image}
 done
+
+if [[ "${headnode_delete}" == "1" ]]; then
+  echo "DELETING HEADNODE: ${headnode_name}"
+  openstack server delete ${headnode_name}
+fi
