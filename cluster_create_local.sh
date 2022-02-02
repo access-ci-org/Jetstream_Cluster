@@ -114,7 +114,6 @@ OS_SSH_SECGROUP_NAME=${OS_PREFIX}-ssh-global
 OS_INTERNAL_SECGROUP_NAME=${OS_PREFIX}-internal
 OS_HTTP_S_SECGROUP_NAME=${OS_PREFIX}-http-s
 OS_KEYPAIR_NAME=${OS_PREFIX}-elastic-key
-OS_APP_CRED=${OS_PREFIX}-slurm-app-cred
 
 # This will allow for customization of the 1st 24 bits of the subnet range
 # The last 8 will be assumed open (netmask 255.255.255.0 or /24)
