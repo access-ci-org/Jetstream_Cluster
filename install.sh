@@ -222,7 +222,7 @@ cat /etc/passwd | awk -F':' '$4 >= 1001 && $4 < 65000 {print "useradd -M -u", $3
 # build instance for compute base image generation, take snapshot, and destroy it
 echo "Creating compute image! based on $centos_base_image"
 
-ansible-playbook -vvvv --ssh-common-args='-o StrictHostKeyChecking=no' compute_build_base_img.yml
+ansible-playbook -v --ssh-common-args='-o StrictHostKeyChecking=no' compute_build_base_img.yml
 
 #to allow other users to run ansible!
 rm -r /tmp/.ansible
