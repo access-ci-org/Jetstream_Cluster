@@ -3,24 +3,25 @@
 - hosts: localhost
 
   vars:
-    compute_base_image: "JS-API-Featured-CentOS8-Latest"
+    compute_base_image: "Featured-RockyLinux8"
     sec_group_global: "{{ ansible_facts.hostname }}-ssh-global"
     sec_group_internal: "{{ ansible_facts.hostname }}-internal"
-    compute_base_size: "m1.small"
+    compute_base_size: "m3.tiny"
     network_name: "{{ ansible_facts.hostname }}-elastic-net"
     JS_ssh_keyname: "{{ ansible_facts.hostname }}-slurm-key"
+    openstack_cloud: "openstack"
 
   vars_files:
     - clouds.yaml
 
   tasks:
 
-  - name: build compute base instance 
+  - name: build compute base instance
     os_server:
       timeout: 300
       state: present
       name: "compute-{{ ansible_facts.hostname }}-base-instance"
-      cloud: "tacc"
+      cloud: "{{ openstack_cloud }}"
       image: "{{ compute_base_image }}"
       key_name: "{{ JS_ssh_keyname }}"
       security_groups: "{{ sec_group_global }},{{ sec_group_internal }}"
@@ -62,7 +63,6 @@
       - "vim"
       - "openmpi4-gnu9-ohpc"
       - "ohpc-slurm-client"
-      - "lmod-ohpc"
     packages_to_remove:
       - "environment-modules"
       - "containerd.io.x86_64"
@@ -85,7 +85,7 @@
     become: False # for running as slurm, since no sudo on localhost
 
   - name: turn off the firewall
-    service: 
+    service:
       name: firewalld
       state: stopped
       enabled: no
@@ -96,40 +96,6 @@
       state: present
       lock_timeout: 900
       disable_gpg_check: yes
-
-  - name: Add CentOS 8.2.2004 vault repo
-    blockinfile:
-      path: /etc/yum.repos.d/CentOS-Vault.repo
-      create: yes
-      block: |
-        [vault-8.2-base]
-        name=CentOS Linux 8.2 - Vault - Base
-        mirrorlist=http://vault.centos.org/8.2.2004/BaseOS
-        baseurl=http://vault.centos.org/8.2.2004/BaseOS/$basearch/os/
-        gpgcheck=1
-        enabled=1
-        
-        [vault-8.2-updates]
-        name=CentOS Linux 8.2 - Vault - AppStream
-        mirrorlist=http://vault.centos.org/8.2.2004/AppStream
-        baseurl=http://vault.centos.org/8.2.2004/AppStream/$basearch/os/
-        gpgcheck=1
-        gpgcheck=1
-        enabled=1
-        
-        [vault-8.2-extra]
-        name=CentOS Linux 8.2 - Vault - Extras
-        mirrorlist=http://vault.centos.org/8.2.2004/extras
-        baseurl=http://vault.centos.org/8.2.2004/extras/$basearch/os/
-        gpgcheck=1
-        enabled=1
-        
-        [vault-8.2-PowerTools]
-        name=CentOS Linux 8.2 - Vault - PowerTools
-        mirrorlist=http://vault.centos.org/8.2.2004/PowerTools
-        baseurl=http://vault.centos.org/8.2.2004/PowerTools/$basearch/os/
-        gpgcheck=1
-        enabled=1
 
 
   - name: Enable CentOS PowerTools repo
@@ -145,8 +111,8 @@
       lock_timeout: 300
 
   - name: install basic packages
-    dnf: 
-      name: "{{ compute_base_package_list }}" 
+    dnf:
+      name: "{{ compute_base_package_list }}"
       state: present
       lock_timeout: 300
 
@@ -181,7 +147,7 @@
 
   - name: ensure /opt/ohpc/pub exists
     file: path=/opt/ohpc/pub state=directory mode=777 recurse=yes
- 
+
   - name: import /opt/ohpc/pub on compute nodes
     lineinfile:
       dest: /etc/fstab
@@ -190,7 +156,7 @@
 
   - name: ensure /export exists
     file: path=/export state=directory mode=777
- 
+
   - name: import /export on compute nodes
     lineinfile:
       dest: /etc/fstab
@@ -203,7 +169,7 @@
       regex: "/                       xfs     defaults"
       line: "/dev/sda1           /                       xfs     defaults  0 0"
       state: present
- 
+
   - name: add local users to compute node
     script: /tmp/add_users.sh
     ignore_errors: True

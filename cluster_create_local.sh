@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Uncomment below to help with debugging
-# set -x
+set -x
 
 #This script makes several assumptions:
 # 1. Running on a host with openstack client tools installed
 # 2. Using a default ssh key in ~/.ssh/
 # 3. The user knows what they're doing.
-# 4. Take some options: 
-#    openrc file 
+# 4. Take some options:
+#    openrc file
 #    volume size
 
 show_help() {
@@ -17,7 +17,7 @@ show_help() {
         -v: VOLUME_SIZE: optional, size of storage volume in GB, volume not created if 0
         -d: DOCKER_ALLOW: optional flag, leave docker installed on headnode if set.
 	-j: JUPYTERHUB_BUILD: optional flag, install jupyterhub with SSL certs.
-  
+
 Usage: $0 -o [OPENRC_PATH] -v [VOLUME_SIZE] [-d]"
 }
 
@@ -48,7 +48,8 @@ while getopts ":jdhhelp:n:o:s:v:" opt; do
 done
 
 sudo dnf -y install centos-release-openstack-train
-sudo dnf -y install python3-openstackclient
+sudo pip3 install python-openstackclient
+sudo ln -s /usr/local/bin/openstack /usr/bin/openstack
 
 if [[ ! -f ${openrc_path} ]]; then
   echo "openrc path: ${openrc_path} \n does not point to a file!"

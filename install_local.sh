@@ -68,8 +68,9 @@ dnf -y install \
         lmod-defaults-gnu9-openmpi4-ohpc \
         moreutils \
         bind-utils \
-        python3-openstackclient \
  	python3-pexpect
+
+pip3 install python-openstackclient
 
 dnf -y update  # until the base python2-openstackclient install works out of the box!
 
@@ -79,19 +80,19 @@ dnf -y update  # until the base python2-openstackclient install works out of the
 [ ! -f slurm-key ] && ssh-keygen -b 2048 -t rsa -P "" -f slurm-key
 
 # generate a local key for centos for after homedirs are mounted!
-[ ! -f /home/centos/.ssh/id_rsa ] && su centos - -c 'ssh-keygen -t rsa -b 2048 -P "" -f /home/centos/.ssh/id_rsa && cat /home/centos/.ssh/id_rsa.pub >> /home/centos/.ssh/authorized_keys'
+[ ! -f /home/rocky/.ssh/id_rsa ] && su rocky - -c 'ssh-keygen -t rsa -b 2048 -P "" -f /home/rocky/.ssh/id_rsa && cat /home/rocky/.ssh/id_rsa.pub >> /home/rocky/.ssh/authorized_keys'
 
 
 #create clouds.yaml file from contents of openrc
 echo -e "clouds:
-  tacc:
+  openstack:
     auth:
       auth_url: '${OS_AUTH_URL}'
       application_credential_id: '${OS_APPLICATION_CREDENTIAL_ID}'
       application_credential_secret: '${OS_APPLICATION_CREDENTIAL_SECRET}'
-    user_domain_name: tacc
+    region_name: IU
+    interface: public
     identity_api_version: 3
-    project_domain_name: tacc
     auth_type: 'v3applicationcredential'" > clouds.yaml
 
 #Make sure only root can read this
@@ -131,7 +132,7 @@ mkdir -p -m 700 /etc/slurm/.ssh
 cp slurm-key slurm-key.pub /etc/slurm/.ssh/
 
 #Make sure slurm-user will still be valid after the nfs mount happens!
-cat slurm-key.pub >> /home/centos/.ssh/authorized_keys
+cat slurm-key.pub >> /home/rocky/.ssh/authorized_keys
 
 chown -R slurm:slurm /etc/slurm/.ssh
 
@@ -190,9 +191,9 @@ cp clean-os-error.sh /usr/local/sbin/
 chown slurm:slurm /usr/local/sbin/slurm_*.sh
 chown slurm:slurm /usr/local/sbin/clean-os-error.sh
 
-chown centos:centos /usr/local/sbin/cron-node-check.sh
+chown rocky:rocky /usr/local/sbin/cron-node-check.sh
 
-echo "#13 */6  *  *  * centos     /usr/local/sbin/cron-node-check.sh" >> /etc/crontab
+echo "#13 */6  *  *  * rocky     /usr/local/sbin/cron-node-check.sh" >> /etc/crontab
 echo "#*/4 *  *  *  * slurm     /usr/local/sbin/clean-os-error.sh" >> /etc/crontab
 
 #"dynamic" hostname adjustment
