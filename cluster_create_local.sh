@@ -47,7 +47,6 @@ while getopts ":jdhhelp:n:o:s:v:" opt; do
   esac
 done
 
-sudo dnf -y install centos-release-openstack-train
 sudo pip3 install python-openstackclient
 sudo ln -s /usr/local/bin/openstack /usr/bin/openstack
 
