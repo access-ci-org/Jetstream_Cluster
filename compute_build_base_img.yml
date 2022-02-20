@@ -63,12 +63,14 @@
       - "vim"
       - "openmpi4-gnu9-ohpc"
       - "ohpc-slurm-client"
+      - "lmod-ohpc"
     packages_to_remove:
       - "environment-modules"
       - "containerd.io.x86_64"
       - "docker-ce.x86_64"
       - "docker-ce-cli.x86_64"
       - "docker-ce-rootless-extras.x86_64"
+      - "Lmod"
 
   tasks:
 
@@ -107,6 +109,13 @@
   - name: remove env-modules and docker packages
     dnf:
       name: "{{ packages_to_remove }}"
+      state: absent
+      lock_timeout: 300
+
+  # There is an issue in removing Lmod in early call. Seems like we need to run it twice
+  - name: remove Lmod packages
+    dnf:
+      name: Lmod
       state: absent
       lock_timeout: 300
 

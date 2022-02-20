@@ -44,8 +44,7 @@ firewall-offline-cmd --add-rich-rule="rule source address="${SUBNET_PREFIX}.0/24
 systemctl enable firewalld
 systemctl restart firewalld
 
-dnf -y install http://repos.openhpc.community/OpenHPC/2/CentOS_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm \
-       centos-release-openstack-train
+dnf -y install http://repos.openhpc.community/OpenHPC/2/CentOS_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm
 
 dnf config-manager --set-enabled powertools
 
@@ -90,9 +89,9 @@ echo -e "clouds:
       auth_url: '${OS_AUTH_URL}'
       application_credential_id: '${OS_APPLICATION_CREDENTIAL_ID}'
       application_credential_secret: '${OS_APPLICATION_CREDENTIAL_SECRET}'
-    region_name: IU
-    interface: public
-    identity_api_version: 3
+    region_name: '${OS_REGION_NAME}'
+    interface: '${OS_INTERFACE}'
+    identity_api_version: '${OS_IDENTITY_API_VERSION}'
     auth_type: 'v3applicationcredential'" > clouds.yaml
 
 #Make sure only root can read this
