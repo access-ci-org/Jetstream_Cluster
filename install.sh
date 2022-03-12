@@ -50,7 +50,7 @@ if [[ ${docker_allow} == 0 ]]; then
   dnf -y remove containerd.io.x86_64 docker-ce.x86_64 docker-ce-cli.x86_64 docker-ce-rootless-extras.x86_64
 fi
 
-dnf -y install \
+dnf -y --allowerasing install \
         ohpc-slurm-server \
         vim \
         ansible \
