@@ -54,6 +54,8 @@ if [[ ${docker_allow} == 0 ]]; then
   dnf -y remove containerd.io.x86_64 docker-ce.x86_64 docker-ce-cli.x86_64 docker-ce-rootless-extras.x86_64
 fi
 
+dnf remove -y  python3
+
 dnf -y --allowerasing install \
         ohpc-slurm-server \
         vim \
@@ -69,7 +71,7 @@ dnf -y --allowerasing install \
         bind-utils \
  	python3-pexpect
 
-pip3 install python-openstackclient
+pip3 install openstacksdk==0.61.0
 
 dnf -y update  # until the base python2-openstackclient install works out of the box!
 
