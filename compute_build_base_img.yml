@@ -76,7 +76,7 @@
 
   - name: Get the headnode private IP
     local_action:
-      module: shell ip addr | grep -Eo '10.0.0.[0-9]*' | head -1
+      module: shell ip addr | grep -Eo '10.0.6.[0-9]*' | head -1
     register: headnode_private_ip
     become: False # for running as slurm, since no sudo on localhost
 

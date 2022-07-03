@@ -108,7 +108,6 @@ quota_check "instances" "server" 1
 #  and compute_take_snapshot.sh, which ASSUME the headnode_name convention has not been deviated from.
 
 OS_PREFIX=${headnode_name}
-OS_NETWORK_NAME=${OS_PREFIX}-elastic-net
 OS_SUBNET_NAME=${OS_PREFIX}-elastic-subnet
 OS_ROUTER_NAME=${OS_PREFIX}-elastic-router
 OS_SSH_SECGROUP_NAME=${OS_PREFIX}-ssh-global
@@ -116,26 +115,16 @@ OS_INTERNAL_SECGROUP_NAME=${OS_PREFIX}-internal
 OS_HTTP_S_SECGROUP_NAME=${OS_PREFIX}-http-s
 OS_KEYPAIR_NAME=${OS_PREFIX}-elastic-key
 
+HEADNODE_NETWORK=$(openstack server show $(hostname -s) | grep addresses | awk  -F'|' '{print $3}' | awk -F'=' '{print $1}')
+HEADNODE_IP=$(openstack server show $(hostname -s) | grep addresses | awk  -F'|' '{print $3}' | awk  -F'=' '{print $2}' | awk  -F',' '{print $1}')
+SUBNET=$(ip addr | grep $HEADNODE_IP | awk '{print $2}')
+
 # This will allow for customization of the 1st 24 bits of the subnet range
 # The last 8 will be assumed open (netmask 255.255.255.0 or /24)
 # because going beyond that requires a general mechanism for translation from CIDR
 # to wildcard notation for ssh.cfg and compute_build_base_img.yml
 # which is assumed to be beyond the scope of this project.
 #  If there is a maintainable mechanism for this, of course, please let us know!
-SUBNET_PREFIX=10.0.0
-
-
-# Ensure that the correct private network/router/subnet exists
-if [[ -z "$(openstack network list | grep ${OS_NETWORK_NAME})" ]]; then
-  openstack network create ${OS_NETWORK_NAME}
-  openstack subnet create --network ${OS_NETWORK_NAME} --subnet-range ${SUBNET_PREFIX}.0/24 ${OS_SUBNET_NAME}
-fi
-##openstack subnet list
-if [[ -z "$(openstack router list | grep ${OS_ROUTER_NAME})" ]]; then
-  openstack router create ${OS_ROUTER_NAME}
-  openstack router add subnet ${OS_ROUTER_NAME} ${OS_SUBNET_NAME}
-  openstack router set --external-gateway public ${OS_ROUTER_NAME}
-fi
 
 security_groups=$(openstack security group list -f value)
 if [[ ! ("${security_groups}" =~ "${OS_SSH_SECGROUP_NAME}") ]]; then
@@ -145,7 +134,7 @@ if [[ ! ("${security_groups}" =~ "${OS_SSH_SECGROUP_NAME}") ]]; then
 fi
 if [[ ! ("${security_groups}" =~ "${OS_INTERNAL_SECGROUP_NAME}") ]]; then
   openstack security group create --description "internal group for cluster" ${OS_INTERNAL_SECGROUP_NAME}
-  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip ${SUBNET_PREFIX}.0/24 ${OS_INTERNAL_SECGROUP_NAME}
+  openstack security group rule create --protocol tcp --dst-port 1:65535 --remote-ip ${SUBNET} ${OS_INTERNAL_SECGROUP_NAME}
   openstack security group rule create --protocol icmp ${OS_INTERNAL_SECGROUP_NAME}
 fi
 if [[ (! ("${security_groups}" =~ "${OS_HTTP_S_SECGROUP_NAME}")) && "${install_opts}" =~ "j" ]]; then
@@ -175,13 +164,6 @@ else
 fi
 
 SERVER_UUID=$(curl http://169.254.169.254/openstack/latest/meta_data.json | jq '.uuid' | sed -e 's#"##g')
-
-server_networks=$(openstack server show -f value -c addresses ${SERVER_UUID})
-
-if [[ ! ("${server_networks}" =~ "${OS_NETWORK_NAME}") ]]; then
-  echo -e "openstack server add network ${SERVER_UUID} ${OS_NETWORK_NAME}"
-  openstack server add network ${SERVER_UUID} ${OS_NETWORK_NAME}
-fi
 
 server_security_groups=$(openstack server show -f value -c security_groups ${SERVER_UUID} | sed -e "s#name=##" -e "s#'##g" | paste -s -)
 
