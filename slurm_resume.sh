@@ -10,7 +10,7 @@ log_loc=/var/log/slurm/slurm_elastic.log
 
 OS_PREFIX=$(hostname -s)
 OS_SLURM_KEYPAIR=${OS_PREFIX}-slurm-key
-OS_NETWORK_NAME=${OS_PREFIX}-elastic-net
+HEADNODE_NETWORK=$(openstack server show $(hostname -s) | grep addresses | awk  -F'|' '{print $3}' | awk -F'=' '{print $1}' | awk '{$1=$1};1')
 OS_SSH_SECGROUP_NAME=${OS_PREFIX}-ssh-global
 OS_INTERNAL_SECGROUP_NAME=${OS_PREFIX}-internal
 
@@ -48,7 +48,7 @@ do
     --key-name ${OS_SLURM_KEYPAIR} \
     --user-data <(echo -e "${user_data_long}") \
     --security-group ${OS_SSH_SECGROUP_NAME} --security-group ${OS_INTERNAL_SECGROUP_NAME} \
-    --nic net-id=${OS_NETWORK_NAME} 2>&1 \
+    --nic net-id=${HEADNODE_NETWORK} 2>&1 \
     | tee -a $log_loc | awk '/status/ {print $4}' >> $log_loc 2>&1;
 
   node_status="UNKOWN";

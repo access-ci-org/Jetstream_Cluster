@@ -36,9 +36,10 @@ source /etc/slurm/openrc.sh
 OS_PREFIX=$(hostname -s)
 OS_SLURM_KEYPAIR=${OS_PREFIX}-slurm-key
 
-HEADNODE_NETWORK=$(openstack server show $(hostname -s) | grep addresses | awk  -F'|' '{print $3}' | awk -F'=' '{print $1}')
+HEADNODE_NETWORK=$(openstack server show $(hostname -s) | grep addresses | awk  -F'|' '{print $3}' | awk -F'=' '{print $1}' | awk '{$1=$1};1')
 HEADNODE_IP=$(openstack server show $(hostname -s) | grep addresses | awk  -F'|' '{print $3}' | awk  -F'=' '{print $2}' | awk  -F',' '{print $1}')
 SUBNET=$(ip addr | grep $HEADNODE_IP | awk '{print $2}')
+SUBNET_PREFIX=$(ip addr | grep $HEADNODE_IP | awk '{print $2}' | awk -F. '{print $1 "." $2 "." $3 ".*"}')
 
 #Open the firewall on the internal network for Cent8. Use offline tool as this runs as a cloud init script.
 # See the discussion : https://titanwolf.org/Network/Articles/Article?AID=ca474d74-d632-4b1e-9b03-cd10add19633
@@ -52,7 +53,7 @@ dnf config-manager --set-enabled powertools
 
 if [[ ${docker_allow} == 0 ]]; then
   dnf config-manager --set-disabled docker-ce-stable
-  
+
   dnf -y remove containerd.io.x86_64 docker-ce.x86_64 docker-ce-cli.x86_64 docker-ce-rootless-extras.x86_64
 fi
 
@@ -126,7 +127,7 @@ sed -i "s/=compute-*/=${OS_PREFIX}-compute-/" ./slurm.conf
 sed -i "s/Host compute-*/Host ${OS_PREFIX}-compute-/" ./ssh.cfg
 
 #set the subnet in ssh.cfg and compute_build_base_img.yml
-sed -i "s/Host 10.0.0.\*/Host ${SUBNET}/" ./ssh.cfg
+sed -i "s/Host 10.0.0.\*/Host ${SUBNET_PREFIX}/" ./ssh.cfg
 sed -i "s/{{ ansible_facts.hostname }}-elastic-net/${HEADNODE_NETWORK}/" ./compute_build_base_img.yml
 
 # Deal with files required by slurm - better way to encapsulate this section?

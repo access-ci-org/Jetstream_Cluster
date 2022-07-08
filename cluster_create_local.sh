@@ -108,16 +108,18 @@ quota_check "instances" "server" 1
 #  and compute_take_snapshot.sh, which ASSUME the headnode_name convention has not been deviated from.
 
 OS_PREFIX=${headnode_name}
-OS_SUBNET_NAME=${OS_PREFIX}-elastic-subnet
-OS_ROUTER_NAME=${OS_PREFIX}-elastic-router
 OS_SSH_SECGROUP_NAME=${OS_PREFIX}-ssh-global
 OS_INTERNAL_SECGROUP_NAME=${OS_PREFIX}-internal
 OS_HTTP_S_SECGROUP_NAME=${OS_PREFIX}-http-s
 OS_KEYPAIR_NAME=${OS_PREFIX}-elastic-key
 
-HEADNODE_NETWORK=$(openstack server show $(hostname -s) | grep addresses | awk  -F'|' '{print $3}' | awk -F'=' '{print $1}')
+HEADNODE_NETWORK=$(openstack server show $(hostname -s) | grep addresses | awk  -F'|' '{print $3}' | awk -F'=' '{print $1}'  | awk '{$1=$1};1')
 HEADNODE_IP=$(openstack server show $(hostname -s) | grep addresses | awk  -F'|' '{print $3}' | awk  -F'=' '{print $2}' | awk  -F',' '{print $1}')
 SUBNET=$(ip addr | grep $HEADNODE_IP | awk '{print $2}')
+
+echo "Headnode network name ${HEADNODE_NETWORK}"
+echo "Headnode ip ${HEADNODE_IP}"
+echo "Subnet ${SUBNET}"
 
 # This will allow for customization of the 1st 24 bits of the subnet range
 # The last 8 will be assumed open (netmask 255.255.255.0 or /24)
