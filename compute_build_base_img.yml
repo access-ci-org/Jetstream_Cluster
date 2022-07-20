@@ -64,6 +64,7 @@
       - "openmpi4-gnu9-ohpc"
       - "ohpc-slurm-client"
       - "lmod-ohpc"
+      - "ceph-common"
     packages_to_remove:
       - "environment-modules"
       - "containerd.io.x86_64"
