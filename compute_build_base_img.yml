@@ -133,6 +133,15 @@
       shell: "/sbin/nologin"
       home: "/etc/slurm"
 
+  - name: create slurm spool directories
+    file:
+      path: /var/spool/slurm/ctld
+      state: directory
+      owner: slurm
+      group: slurm
+      mode: 0755
+      recurse: yes
+
   - name: change ownership of slurm files
     file:
       path: "{{ item }}"
