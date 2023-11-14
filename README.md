@@ -3,8 +3,7 @@
 ## Intro
 
 This repo contains scripts and ansible playbooks for creating a virtual 
-cluster in an Openstack environment, specifically aimed at the XSEDE 
-Jetstream2 resource.
+cluster in an Openstack environment, specifically aimed at the Jetstream2 resource.
 
 The basic structure is to have a single image act as headnode, with
 compute nodes managed by SLURM via the openstack API. A customized 
@@ -24,7 +23,7 @@ a virtual machine created from the latest Rocky Linux 8 base image in Jestream 2
 2. Move to the rocky user if you are in a different user. ```sudo su - rocky```
 3. If you have not already done, create an openrc fire for your jetsream2 account by following the [Jestream 2 Documentation](https://docs.jetstream-cloud.org/ui/cli/openrc/)
 4. Copy the generated openrc file to the home directory of rocky user
-5. Clone the [XCRI Virtual Cluster repository](https://github.com/XSEDE/CRI_Jetstream_Cluster) 
+5. Clone the [Virtual Cluster repository](https://github.com/access-ci-org/Jetstream_Cluster) 
 6. If you'd like to modify your cluster, now is a good time!
 
     * The number of nodes can be set in the slurm.conf file, by editing
