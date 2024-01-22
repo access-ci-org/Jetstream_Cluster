@@ -28,7 +28,7 @@
       flavor: "{{ compute_base_size }}"
       meta: { compute: "base" }
       auto_ip: "no"
-      user_data: |
+      userdata: |
         #cloud-config
         packages: []
         package_update: false
