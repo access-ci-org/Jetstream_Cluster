@@ -47,8 +47,8 @@ while getopts ":jdhhelp:n:o:s:v:" opt; do
   esac
 done
 
-sudo pip3 install openstacksdk==0.61.0
-sudo pip3 install python-openstackclient
+sudo pip3 install openstacksdk==2.1.0
+sudo pip3 install python-openstackclient==6.5.0
 sudo ln -s /usr/local/bin/openstack /usr/bin/openstack
 
 if [[ ! -f ${openrc_path} ]]; then
