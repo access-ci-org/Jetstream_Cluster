@@ -44,9 +44,9 @@
 
   - name: add compute instance to inventory
     add_host:
-      name: "{{ os_host['openstack']['name'] }}"
+      name: "{{ os_host['server']['name'] }}"
       groups: "compute-base"
-      ansible_host: "{{ os_host.openstack.private_v4 }}"
+      ansible_host: "{{ os_host['server']['hostname'] }}"
 
   - name: pause for ssh to come up
     pause:
