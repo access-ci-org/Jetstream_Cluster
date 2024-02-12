@@ -20,7 +20,7 @@
     os_server:
       timeout: 300
       state: present
-      name: "compute-{{ ansible_facts.hostname }}-base-instance"
+      name: "{{ ansible_facts.hostname }}-compute-base-instance"
       cloud: "{{ openstack_cloud }}"
       image: "{{ compute_base_image }}"
       key_name: "{{ JS_ssh_keyname }}"
